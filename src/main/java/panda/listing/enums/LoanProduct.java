@@ -8,5 +8,7 @@ public enum LoanProduct {
     SEOUL_RENT_DEPOSIT,
     SEOUL_NEWLY_MARRIED,
     GENERAL_JEONSE,
-    FINTECH_BANK
+    KAKAO_BANK,
+    TOSS_BANK,
+    K_BANK
 }

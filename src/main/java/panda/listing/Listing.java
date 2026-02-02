@@ -1,24 +1,12 @@
 package panda.listing;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import panda.listing.enums.AvailabilityStatus;
-import panda.listing.enums.ContractType;
-import panda.listing.enums.ElevatorStatus;
-import panda.listing.enums.LoanProduct;
-import panda.listing.enums.RoomType;
+import panda.listing.enums.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -69,10 +57,10 @@ public class Listing {
     @Column(nullable = false)
     private Long monthlyRent;
 
-    @Column(nullable = false, precision = 10, scale = 7)
+    @Column(nullable = false)
     private Double latitude;
 
-    @Column(nullable = false, precision = 10, scale = 7)
+    @Column(nullable = false)
     private Double longitude;
 
     @Column(nullable = false)

@@ -36,3 +36,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Gradle
+.gradle/
+.gradle-user-home/
+build/
+.idea/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

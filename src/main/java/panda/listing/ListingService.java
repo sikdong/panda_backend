@@ -2,10 +2,14 @@ package panda.listing;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import panda.image.ImageStorageService;
 import panda.listing.dto.CreateListingRequest;
 import panda.listing.dto.CreateListingResponse;
 import panda.listing.dto.ListingSummaryResponse;
@@ -19,25 +23,35 @@ public class ListingService {
 
     private final ListingRepository listingRepository;
     private final GeocodingService geocodingService;
+    private final ImageStorageService imageStorageService;
 
     @Transactional
     public CreateListingResponse create(CreateListingRequest request) {
+        return create(request, Collections.emptyList());
+    }
+
+    @Transactional
+    public CreateListingResponse create(CreateListingRequest request, List<MultipartFile> imageFiles) {
         Coordinate coordinate = geocodingService.convertAddressToCoordinate(request.address());
 
-        Listing listing = new Listing();
-        listing.setAddress(request.address().trim());
-        listing.setNote(request.note());
-        listing.setParking(request.parking());
-        listing.setElevator(request.elevator());
-        listing.setPet(request.pet());
-        listing.setContractType(request.contractType());
-        listing.setRoomType(request.roomType());
-        listing.setLoanProduct(request.loanProduct());
-        listing.setMoveInDate(LocalDate.parse(request.moveInDate(), MOVE_IN_DATE_FORMATTER));
-        listing.setDeposit(request.deposit());
-        listing.setMonthlyRent(request.monthlyRent());
-        listing.setLatitude(coordinate.latitude());
-        listing.setLongitude(coordinate.longitude());
+        Listing listing = Listing.builder()
+                .address(request.address().trim())
+                .note(request.note())
+                .parking(request.parking())
+                .elevator(request.elevator())
+                .pet(request.pet())
+                .contractType(request.contractType())
+                .roomType(request.roomType())
+                .loanProducts(request.loanProducts())
+                .moveInDate(LocalDate.parse(request.moveInDate(), MOVE_IN_DATE_FORMATTER))
+                .deposit(request.deposit())
+                .monthlyRent(request.monthlyRent())
+                .latitude(coordinate.latitude())
+                .longitude(coordinate.longitude())
+                .build();
+
+        List<String> imagePaths = imageStorageService.store(imageFiles);
+        imagePaths.forEach(listing::addImagePath);
 
         Listing saved = listingRepository.save(listing);
         return new CreateListingResponse(saved.getId(), saved.getCreatedAt());

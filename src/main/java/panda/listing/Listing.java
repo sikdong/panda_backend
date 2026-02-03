@@ -1,17 +1,21 @@
 package panda.listing;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import panda.image.Image;
 import panda.listing.enums.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
-@Setter
 @Entity
 @Table(name = "listings")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Listing {
 
     @Id
@@ -44,9 +48,10 @@ public class Listing {
     @Column(nullable = false, length = 30)
     private RoomType roomType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 40)
-    private LoanProduct loanProduct;
+    @Convert(converter = LoanProductListConverter.class)
+    @Column(name = "loan_product", nullable = false, columnDefinition = "TEXT")
+    @Builder.Default
+    private List<LoanProduct> loanProducts = new ArrayList<>();
 
     @Column(nullable = false)
     private LocalDate moveInDate;
@@ -68,6 +73,20 @@ public class Listing {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Image> images = new ArrayList<>();
+
+    public void addImagePath(String imagePath) {
+        if (images == null) {
+            images = new ArrayList<>();
+        }
+        images.add(Image.builder()
+                .imagePath(imagePath)
+                .listing(this)
+                .build());
+    }
 
     @PrePersist
     public void onCreate() {

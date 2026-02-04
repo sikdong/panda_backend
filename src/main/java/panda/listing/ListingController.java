@@ -5,17 +5,15 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import panda.listing.dto.CreateListingRequest;
 import panda.listing.dto.CreateListingResponse;
+import panda.listing.dto.ListingDetailResponse;
 import panda.listing.dto.ListingSummaryResponse;
+import panda.listing.dto.UpdateListingRequest;
+import panda.listing.dto.UpdateListingSoldRequest;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,4 +41,34 @@ public class ListingController {
     public List<ListingSummaryResponse> getSummaries() {
         return listingService.getSummaries();
     }
+
+    @GetMapping("/{id}")
+    public ListingDetailResponse getById(@PathVariable Long id) {
+        return listingService.getById(id);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> patch(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateListingRequest request
+    ) {
+        listingService.patch(id, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        listingService.delete(id);
+    }
+
+    @PatchMapping("/{id}/sold")
+    public ResponseEntity<Void> patchSold(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateListingSoldRequest request
+    ) {
+        listingService.patchSold(id, request);
+        return ResponseEntity.ok().build();
+    }
+
 }

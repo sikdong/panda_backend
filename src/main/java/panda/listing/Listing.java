@@ -53,7 +53,7 @@ public class Listing {
     @Builder.Default
     private List<LoanProduct> loanProducts = new ArrayList<>();
 
-    @Column(nullable = false)
+    @Column
     private LocalDate moveInDate;
 
     @Column(nullable = false)
@@ -61,6 +61,10 @@ public class Listing {
 
     @Column(nullable = false)
     private Long monthlyRent;
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean sold = false;
 
     @Column(nullable = false)
     private Double latitude;
@@ -86,6 +90,42 @@ public class Listing {
                 .imagePath(imagePath)
                 .listing(this)
                 .build());
+    }
+
+    public void updateDetails(
+            String address,
+            String note,
+            AvailabilityStatus parking,
+            ElevatorStatus elevator,
+            AvailabilityStatus pet,
+            ContractType contractType,
+            RoomType roomType,
+            List<LoanProduct> loanProducts,
+            LocalDate moveInDate,
+            Long deposit,
+            Long monthlyRent,
+            boolean sold,
+            Double latitude,
+            Double longitude
+    ) {
+        this.address = address;
+        this.note = note;
+        this.parking = parking;
+        this.elevator = elevator;
+        this.pet = pet;
+        this.contractType = contractType;
+        this.roomType = roomType;
+        this.loanProducts = loanProducts == null ? new ArrayList<>() : new ArrayList<>(loanProducts);
+        this.moveInDate = moveInDate;
+        this.deposit = deposit;
+        this.monthlyRent = monthlyRent;
+        this.sold = sold;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public void updateSold(boolean sold) {
+        this.sold = sold;
     }
 
     @PrePersist

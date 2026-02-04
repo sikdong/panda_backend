@@ -1,34 +1,49 @@
 package panda.image;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @Service
 public class ImageStorageService {
 
     private static final String IMAGE_API_PREFIX = "/api/images/";
-    private final Path uploadDirectory;
+    private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
+    private final String bucket;
+    private final String keyPrefix;
+    private final long presignedGetExpirationSeconds;
 
-    public ImageStorageService(@Value("${app.image.upload-dir:uploads/listings}") String uploadDir) {
-        this.uploadDirectory = Paths.get(uploadDir).toAbsolutePath().normalize();
-        try {
-            Files.createDirectories(this.uploadDirectory);
-        } catch (IOException ex) {
-            throw new IllegalStateException("Failed to create image upload directory", ex);
+    public ImageStorageService(
+            S3Client s3Client,
+            S3Presigner s3Presigner,
+            @Value("${app.image.s3.bucket}") String bucket,
+            @Value("${app.image.s3.key-prefix:listings}") String keyPrefix,
+            @Value("${app.image.s3.presigned-get-expiration-seconds:900}") long presignedGetExpirationSeconds
+    ) {
+        this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
+        if (bucket == null || bucket.isBlank()) {
+            throw new IllegalStateException("S3 bucket must be configured");
         }
+        this.bucket = bucket.trim();
+        this.keyPrefix = normalizePrefix(keyPrefix);
+        this.presignedGetExpirationSeconds = presignedGetExpirationSeconds;
     }
 
     public List<String> store(List<MultipartFile> imageFiles) {
@@ -36,50 +51,107 @@ public class ImageStorageService {
             return Collections.emptyList();
         }
 
-        List<String> imagePaths = new ArrayList<>();
+        List<String> imageKeys = new ArrayList<>();
         for (MultipartFile imageFile : imageFiles) {
             if (imageFile == null || imageFile.isEmpty()) {
                 continue;
             }
 
-            String savedFileName = save(imageFile);
-            imagePaths.add(IMAGE_API_PREFIX + savedFileName);
+            String key = save(imageFile);
+            imageKeys.add(key);
         }
-        return imagePaths;
+        return imageKeys;
     }
 
-    public Resource load(String fileName) {
-        try {
-            Path path = uploadDirectory.resolve(fileName).normalize();
-            if (!path.startsWith(uploadDirectory)) {
-                throw new IllegalArgumentException("Invalid image path");
-            }
+    public String issuePresignedGetUrl(String imagePathOrKey) {
+        String key = normalizeToKey(imagePathOrKey);
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .getObjectRequest(getObjectRequest)
+                .signatureDuration(Duration.ofSeconds(presignedGetExpirationSeconds))
+                .build();
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+        return presignedRequest.url().toString();
+    }
 
-            Resource resource = new UrlResource(path.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                throw new IllegalArgumentException("Image not found");
+    public void delete(List<String> imagePathOrKeys) {
+        if (imagePathOrKeys == null || imagePathOrKeys.isEmpty()) {
+            return;
+        }
+
+        for (String imagePathOrKey : imagePathOrKeys) {
+            String key = normalizeToKey(imagePathOrKey);
+            try {
+                DeleteObjectRequest request = DeleteObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .build();
+                s3Client.deleteObject(request);
+            } catch (S3Exception ex) {
+                throw new IllegalStateException("Failed to delete image file from S3", ex);
             }
-            return resource;
-        } catch (IOException ex) {
-            throw new IllegalStateException("Failed to load image file", ex);
         }
     }
 
     private String save(MultipartFile imageFile) {
         String extension = extractExtension(imageFile.getOriginalFilename());
-        String savedFileName = UUID.randomUUID() + extension;
-        Path destination = uploadDirectory.resolve(savedFileName).normalize();
+        String fileName = UUID.randomUUID() + extension;
+        String key = keyPrefix + "/" + fileName;
 
-        if (!destination.startsWith(uploadDirectory)) {
+        try {
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(imageFile.getContentType())
+                    .build();
+            s3Client.putObject(request, RequestBody.fromBytes(imageFile.getBytes()));
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to read image file", ex);
+        } catch (S3Exception ex) {
+            throw new IllegalStateException("Failed to upload image file to S3", ex);
+        }
+        return key;
+    }
+
+    private String normalizeToKey(String imagePathOrKey) {
+        if (imagePathOrKey == null || imagePathOrKey.isBlank()) {
             throw new IllegalArgumentException("Invalid image path");
         }
 
-        try (InputStream inputStream = imageFile.getInputStream()) {
-            Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException ex) {
-            throw new IllegalStateException("Failed to save image file", ex);
+        String key = imagePathOrKey.trim();
+        if (key.startsWith(IMAGE_API_PREFIX)) {
+            key = key.substring(IMAGE_API_PREFIX.length());
         }
-        return savedFileName;
+        if (key.startsWith("/")) {
+            key = key.substring(1);
+        }
+        if (!key.contains("/")) {
+            key = keyPrefix + "/" + key;
+        }
+        if (key.contains("\\") || key.contains("..") || key.endsWith("/") || key.isBlank()) {
+            throw new IllegalArgumentException("Invalid image path");
+        }
+        return key;
+    }
+
+    private String normalizePrefix(String prefix) {
+        String normalized = prefix == null ? "" : prefix.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalStateException("S3 key prefix must be configured");
+        }
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        if (normalized.isEmpty() || normalized.contains("\\") || normalized.contains("..")) {
+            throw new IllegalStateException("Invalid S3 key prefix");
+        }
+        return normalized;
     }
 
     private String extractExtension(String fileName) {

@@ -1,14 +1,13 @@
 package panda.image;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import panda.image.dto.PresignedGetImageResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,18 +16,23 @@ public class ImageController {
 
     private final ImageStorageService imageStorageService;
 
-    @GetMapping("/{fileName:.+}")
-    public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
-        Resource resource;
+    @GetMapping("/{fileName:.+}/presigned-get")
+    public ResponseEntity<PresignedGetImageResponse> issuePresignedGet(@PathVariable String fileName) {
         try {
-            resource = imageStorageService.load(fileName);
+            String url = imageStorageService.issuePresignedGetUrl(fileName);
+            return ResponseEntity.ok(new PresignedGetImageResponse(url));
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
+    }
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=31536000")
-                .body(resource);
+    @GetMapping(value = "/presigned-get", params = "key")
+    public ResponseEntity<PresignedGetImageResponse> issuePresignedGetByKey(@RequestParam String key) {
+        try {
+            String url = imageStorageService.issuePresignedGetUrl(key);
+            return ResponseEntity.ok(new PresignedGetImageResponse(url));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

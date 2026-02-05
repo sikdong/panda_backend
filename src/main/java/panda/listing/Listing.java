@@ -12,7 +12,12 @@ import java.util.List;
 
 @Getter
 @Entity
-@Table(name = "listings")
+@Table(
+        name = "listings",
+        indexes = {
+                @Index(name = "idx_listings_updated_at_id", columnList = "updated_at, id")
+        }
+)
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

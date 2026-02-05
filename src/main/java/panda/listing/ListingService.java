@@ -3,7 +3,12 @@ package panda.listing;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,7 +19,7 @@ import panda.image.ImageStorageService;
 import panda.listing.dto.CreateListingRequest;
 import panda.listing.dto.CreateListingResponse;
 import panda.listing.dto.ListingDetailResponse;
-import panda.listing.dto.ListingSummaryResponse;
+import panda.listing.dto.ListingResponse;
 import panda.listing.dto.UpdateListingRequest;
 import panda.listing.dto.UpdateListingSoldRequest;
 
@@ -64,19 +69,26 @@ public class ListingService {
     }
 
     @Transactional(readOnly = true)
-    public List<ListingSummaryResponse> getSummaries() {
-        return listingRepository.findAll().stream()
-                .map(listing -> new ListingSummaryResponse(
-                        listing.getId(),
-                        listing.getAddress(),
-                        listing.getDeposit(),
-                        listing.getMonthlyRent(),
-                        listing.getLoanProducts(),
-                        listing.isSold(),
-                        listing.getRoomType(),
-                        listing.getLatitude(),
-                        listing.getLongitude()
-                ))
+    public List<ListingResponse> getSummaries() {
+        return listingRepository.findAllByOrderByUpdatedAtDescIdDesc().stream()
+                .map(this::toSummaryResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ListingResponse> getUnsoldListings() {
+        return listingRepository.findBySoldFalseOrderByUpdatedAtDescIdDesc().stream()
+                .map(this::toSummaryResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ListingResponse> searchByAddress(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Address keyword must not be blank");
+        }
+        return listingRepository.findByAddressContainingIgnoreCaseOrderByUpdatedAtDescIdDesc(keyword.trim()).stream()
+                .map(this::toSummaryResponse)
                 .toList();
     }
 
@@ -88,6 +100,11 @@ public class ListingService {
 
     @Transactional
     public void patch(Long id, UpdateListingRequest request) {
+        patch(id, request, null);
+    }
+
+    @Transactional
+    public void patch(Long id, UpdateListingRequest request, List<MultipartFile> images) {
         Listing listing = findByIdOrThrow(id);
 
         String address = listing.getAddress();
@@ -128,6 +145,11 @@ public class ListingService {
                 latitude,
                 longitude
         );
+
+        List<MultipartFile> safeImages = images == null ? List.of() : images;
+        syncExistingImages(listing, request.imagePaths());
+        List<String> newImagePaths = imageStorageService.store(safeImages);
+        newImagePaths.forEach(listing::addImagePath);
     }
 
     @Transactional
@@ -176,5 +198,58 @@ public class ListingService {
                         .map(image -> imageStorageService.issuePresignedGetUrl(image.getImagePath()))
                         .toList()
         );
+    }
+
+    private ListingResponse toSummaryResponse(Listing listing) {
+        return new ListingResponse(
+                listing.getId(),
+                listing.getAddress(),
+                listing.getDeposit(),
+                listing.getMonthlyRent(),
+                listing.getLoanProducts(),
+                listing.isSold(),
+                listing.getRoomType(),
+                listing.getLatitude(),
+                listing.getLongitude()
+        );
+    }
+
+    private void syncExistingImages(Listing listing, List<String> requestedImagePaths) {
+        //FIXME 다시 구현
+        if (requestedImagePaths == null) {
+            return;
+        }
+
+        List<String> normalizedRequestedPaths = requestedImagePaths.stream()
+                .filter(path -> path != null && !path.isBlank())
+                .map(String::trim)
+                .toList();
+
+        Map<String, panda.image.Image> existingByPath = listing.getImages().stream()
+                .collect(Collectors.toMap(panda.image.Image::getImagePath, Function.identity(), (left, right) -> left));
+        Set<String> requestedPathSet = new LinkedHashSet<>(normalizedRequestedPaths);
+
+        if (!existingByPath.keySet().containsAll(requestedPathSet)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown retained image path included");
+        }
+
+        List<String> pathsToDelete = existingByPath.keySet().stream()
+                .filter(path -> !requestedPathSet.contains(path))
+                .toList();
+        if (!pathsToDelete.isEmpty()) {
+            imageStorageService.delete(pathsToDelete);
+        }
+
+        listing.getImages().removeIf(image -> !requestedPathSet.contains(image.getImagePath()));
+
+        Map<String, Integer> order = new java.util.HashMap<>();
+        for (int i = 0; i < normalizedRequestedPaths.size(); i++) {
+            order.putIfAbsent(normalizedRequestedPaths.get(i), i);
+        }
+        listing.getImages().sort((left, right) -> {
+            int leftOrder = order.getOrDefault(left.getImagePath(), Integer.MAX_VALUE);
+            int rightOrder = order.getOrDefault(right.getImagePath(), Integer.MAX_VALUE);
+            return Integer.compare(leftOrder, rightOrder);
+        });
     }
 }

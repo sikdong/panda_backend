@@ -10,5 +10,6 @@ public enum LoanProduct {
     GENERAL_JEONSE,
     KAKAO_BANK,
     TOSS_BANK,
-    K_BANK
+    K_BANK,
+    CASH
 }

@@ -5,7 +5,7 @@ import panda.listing.enums.RoomType;
 
 import java.util.List;
 
-public record ListingSummaryResponse(
+public record ListingResponse(
         Long id,
         String address,
         Long deposit,

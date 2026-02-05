@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import panda.listing.dto.CreateListingRequest;
 import panda.listing.dto.CreateListingResponse;
 import panda.listing.dto.ListingDetailResponse;
-import panda.listing.dto.ListingSummaryResponse;
+import panda.listing.dto.ListingResponse;
 import panda.listing.dto.UpdateListingRequest;
 import panda.listing.dto.UpdateListingSoldRequest;
 
@@ -38,16 +38,26 @@ public class ListingController {
     }
 
     @GetMapping("/summaries")
-    public List<ListingSummaryResponse> getSummaries() {
+    public List<ListingResponse> getSummaries() {
         return listingService.getSummaries();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/unsold")
+    public List<ListingResponse> getUnsoldListings() {
+        return listingService.getUnsoldListings();
+    }
+
+    @GetMapping("/search")
+    public List<ListingResponse> searchByAddress(@RequestParam("address") String address) {
+        return listingService.searchByAddress(address);
+    }
+
+    @GetMapping("/{id:\\d+}")
     public ListingDetailResponse getById(@PathVariable Long id) {
         return listingService.getById(id);
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping(path = "/{id:\\d+}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> patch(
             @PathVariable Long id,
             @Valid @RequestBody UpdateListingRequest request
@@ -56,13 +66,23 @@ public class ListingController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{id}")
+    @PatchMapping(path = "/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> patchWithImages(
+            @PathVariable Long id,
+            @Valid @RequestPart("listing") UpdateListingRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images
+    ) {
+        listingService.patch(id, request, images);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id:\\d+}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         listingService.delete(id);
     }
 
-    @PatchMapping("/{id}/sold")
+    @PatchMapping("/{id:\\d+}/sold")
     public ResponseEntity<Void> patchSold(
             @PathVariable Long id,
             @Valid @RequestBody UpdateListingSoldRequest request

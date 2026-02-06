@@ -20,6 +20,7 @@ public record ListingDetailResponse(
         LocalDate moveInDate,
         Long deposit,
         Long monthlyRent,
-        List<String> imagePaths
+        List<String> imagePaths,
+        List<String> imageFilePaths
 ) {
 }

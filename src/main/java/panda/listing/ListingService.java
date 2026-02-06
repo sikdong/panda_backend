@@ -196,6 +196,9 @@ public class ListingService {
                 listing.getMonthlyRent(),
                 listing.getImages().stream()
                         .map(image -> imageStorageService.issuePresignedGetUrl(image.getImagePath()))
+                        .toList(),
+                listing.getImages().stream()
+                        .map(image -> image.getImagePath())
                         .toList()
         );
     }

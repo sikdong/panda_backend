@@ -92,9 +92,10 @@ public class ListingService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ListingDetailResponse getById(Long id) {
         Listing listing = findByIdOrThrow(id);
+        listing.increaseViewCount();
         return toDetailResponse(listing);
     }
 
@@ -194,6 +195,7 @@ public class ListingService {
                 listing.getMoveInDate(),
                 listing.getDeposit(),
                 listing.getMonthlyRent(),
+                listing.getViewCount(),
                 listing.getImages().stream()
                         .map(image -> imageStorageService.issuePresignedGetUrl(image.getImagePath()))
                         .toList(),
@@ -209,6 +211,7 @@ public class ListingService {
                 listing.getAddress(),
                 listing.getDeposit(),
                 listing.getMonthlyRent(),
+                listing.getViewCount(),
                 listing.getLoanProducts(),
                 listing.isSold(),
                 listing.getRoomType(),

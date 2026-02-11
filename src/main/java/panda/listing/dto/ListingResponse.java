@@ -10,6 +10,7 @@ public record ListingResponse(
         String address,
         Long deposit,
         Long monthlyRent,
+        Long viewCount,
         List<LoanProduct> loanProducts,
         boolean sold,
         RoomType roomType,

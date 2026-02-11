@@ -66,6 +66,10 @@ public class Listing {
     @Builder.Default
     private boolean sold = false;
 
+    @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+    @Builder.Default
+    private Long viewCount = 0L;
+
     @Column(nullable = false)
     private Double latitude;
 
@@ -126,6 +130,13 @@ public class Listing {
 
     public void updateSold(boolean sold) {
         this.sold = sold;
+    }
+
+    public void increaseViewCount() {
+        if (viewCount == null) {
+            viewCount = 0L;
+        }
+        viewCount += 1;
     }
 
     @PrePersist

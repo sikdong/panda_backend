@@ -12,7 +12,8 @@ public record ListingResponse(
         Long monthlyRent,
         Long viewCount,
         List<LoanProduct> loanProducts,
-        boolean sold,
+        Boolean sold,
+        Boolean hotProperty,
         RoomType roomType,
         Double latitude,
         Double longitude

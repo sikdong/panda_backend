@@ -21,6 +21,7 @@ public record ListingDetailResponse(
         Long deposit,
         Long monthlyRent,
         Long viewCount,
+        Boolean hotProperty,
         List<String> imagePaths,
         List<String> imageFilePaths
 ) {

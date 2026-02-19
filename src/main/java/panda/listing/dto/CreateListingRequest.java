@@ -24,6 +24,7 @@ public record CreateListingRequest(
         String moveInDate,
         @NotNull @Min(0) Long deposit,
         @NotNull @Min(0) Long monthlyRent,
-        Boolean sold
+        Boolean sold,
+        Boolean hotProperty
 ) {
 }

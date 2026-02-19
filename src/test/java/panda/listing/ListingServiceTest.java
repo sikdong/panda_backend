@@ -77,6 +77,7 @@ class ListingServiceTest {
                 "20260214",
                 10000000L,
                 550000L,
+                false,
                 false
         );
 
@@ -186,6 +187,7 @@ class ListingServiceTest {
                 null,
                 null,
                 true,
+                false,
                 null
         ));
 
@@ -214,6 +216,7 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
+                false,
                 null
         ));
 
@@ -241,6 +244,7 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
+                false,
                 null
         ));
 
@@ -271,6 +275,7 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
+                false,
                 List.of("listings/old-2.jpg")
         ));
 
@@ -301,6 +306,7 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
+                false,
                 List.of("listings/keep.jpg")
         ));
 
@@ -331,6 +337,7 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
+                false,
                 List.of("listings/unknown.jpg")
         )))
                 .isInstanceOf(ResponseStatusException.class)
@@ -380,7 +387,8 @@ class ListingServiceTest {
                 "20260101",
                 10000000L,
                 0L,
-                sold
+                sold,
+                false
         );
     }
 

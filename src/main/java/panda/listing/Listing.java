@@ -66,6 +66,10 @@ public class Listing {
     @Builder.Default
     private boolean sold = false;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean hotProperty = false;
+
     @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     @Builder.Default
     private Long viewCount = 0L;
@@ -108,7 +112,8 @@ public class Listing {
             LocalDate moveInDate,
             Long deposit,
             Long monthlyRent,
-            boolean sold,
+            Boolean sold,
+            Boolean hotProperty,
             Double latitude,
             Double longitude
     ) {
@@ -124,6 +129,7 @@ public class Listing {
         this.deposit = deposit;
         this.monthlyRent = monthlyRent;
         this.sold = sold;
+        this.hotProperty = hotProperty;
         this.latitude = latitude;
         this.longitude = longitude;
     }

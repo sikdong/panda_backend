@@ -22,6 +22,7 @@ public record UpdateListingRequest(
         @Min(0) Long deposit,
         @Min(0) Long monthlyRent,
         Boolean sold,
+        Boolean hotProperty,
         List<@Size(max = 500) String> imagePaths
 ) {
 }

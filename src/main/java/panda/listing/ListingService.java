@@ -57,6 +57,7 @@ public class ListingService {
                 .deposit(request.deposit())
                 .monthlyRent(request.monthlyRent())
                 .sold(Boolean.TRUE.equals(request.sold()))
+                .hotProperty(Boolean.TRUE.equals(request.hotProperty()))
                 .latitude(coordinate.latitude())
                 .longitude(coordinate.longitude())
                 .build();
@@ -143,6 +144,7 @@ public class ListingService {
                 request.deposit() != null ? request.deposit() : listing.getDeposit(),
                 request.monthlyRent() != null ? request.monthlyRent() : listing.getMonthlyRent(),
                 request.sold() != null ? request.sold() : listing.isSold(),
+                request.hotProperty() != null ? request.hotProperty() : listing.isHotProperty(),
                 latitude,
                 longitude
         );
@@ -196,6 +198,7 @@ public class ListingService {
                 listing.getDeposit(),
                 listing.getMonthlyRent(),
                 listing.getViewCount(),
+                listing.isHotProperty(),
                 listing.getImages().stream()
                         .map(image -> imageStorageService.issuePresignedGetUrl(image.getImagePath()))
                         .toList(),
@@ -214,6 +217,7 @@ public class ListingService {
                 listing.getViewCount(),
                 listing.getLoanProducts(),
                 listing.isSold(),
+                listing.isHotProperty(),
                 listing.getRoomType(),
                 listing.getLatitude(),
                 listing.getLongitude()

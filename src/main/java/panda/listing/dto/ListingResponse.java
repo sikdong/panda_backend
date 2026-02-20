@@ -1,6 +1,7 @@
 package panda.listing.dto;
 
 import panda.listing.enums.LoanProduct;
+import panda.listing.enums.MoveInType;
 import panda.listing.enums.RoomType;
 
 import java.util.List;

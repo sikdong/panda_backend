@@ -6,6 +6,7 @@ import panda.listing.enums.AvailabilityStatus;
 import panda.listing.enums.ContractType;
 import panda.listing.enums.ElevatorStatus;
 import panda.listing.enums.LoanProduct;
+import panda.listing.enums.MoveInType;
 import panda.listing.enums.RoomType;
 
 public record ListingDetailResponse(
@@ -17,6 +18,8 @@ public record ListingDetailResponse(
         ContractType contractType,
         RoomType roomType,
         List<LoanProduct> loanProducts,
+        MoveInType moveInType,
+        String moveInTypeLabel,
         LocalDate moveInDate,
         Long deposit,
         Long monthlyRent,

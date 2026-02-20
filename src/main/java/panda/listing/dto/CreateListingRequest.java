@@ -6,11 +6,8 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
-import panda.listing.enums.AvailabilityStatus;
-import panda.listing.enums.ContractType;
-import panda.listing.enums.ElevatorStatus;
-import panda.listing.enums.LoanProduct;
-import panda.listing.enums.RoomType;
+
+import panda.listing.enums.*;
 
 public record CreateListingRequest(
         @NotBlank @Size(max = 200) String address,
@@ -25,6 +22,7 @@ public record CreateListingRequest(
         @NotNull @Min(0) Long deposit,
         @NotNull @Min(0) Long monthlyRent,
         Boolean sold,
-        Boolean hotProperty
+        Boolean hotProperty,
+        MoveInType moveInType
 ) {
 }

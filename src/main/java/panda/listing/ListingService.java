@@ -22,6 +22,7 @@ import panda.listing.dto.ListingDetailResponse;
 import panda.listing.dto.ListingResponse;
 import panda.listing.dto.UpdateListingRequest;
 import panda.listing.dto.UpdateListingSoldRequest;
+import panda.listing.enums.MoveInType;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,7 @@ public class ListingService {
     public CreateListingResponse create(CreateListingRequest request, List<MultipartFile> imageFiles) {
         Coordinate coordinate = geocodingService.convertAddressToCoordinate(request.address());
         LocalDate moveInDate = parseMoveInDate(request.moveInDate());
+        validateMoveInCombination(request.moveInType(), moveInDate);
 
         Listing listing = Listing.builder()
                 .address(request.address().trim())
@@ -60,6 +62,7 @@ public class ListingService {
                 .hotProperty(Boolean.TRUE.equals(request.hotProperty()))
                 .latitude(coordinate.latitude())
                 .longitude(coordinate.longitude())
+                .moveInType(request.moveInType())
                 .build();
 
         List<String> imagePaths = imageStorageService.store(imageFiles);
@@ -125,11 +128,8 @@ public class ListingService {
                 longitude = coordinate.longitude();
             }
         }
-
-        LocalDate moveInDate = listing.getMoveInDate();
-        if (request.moveInDate() != null) {
-            moveInDate = parseMoveInDate(request.moveInDate());
-        }
+        LocalDate moveInDate = parseMoveInDate(request.moveInDate());
+        validateMoveInCombination(request.moveInType(), moveInDate);
 
         listing.updateDetails(
                 address,
@@ -146,7 +146,8 @@ public class ListingService {
                 request.sold() != null ? request.sold() : listing.isSold(),
                 request.hotProperty() != null ? request.hotProperty() : listing.isHotProperty(),
                 latitude,
-                longitude
+                longitude,
+                request.moveInType()
         );
 
         List<MultipartFile> safeImages = images == null ? List.of() : images;
@@ -179,6 +180,15 @@ public class ListingService {
         return LocalDate.parse(moveInDate.trim(), MOVE_IN_DATE_FORMATTER);
     }
 
+    private void validateMoveInCombination(MoveInType moveInType, LocalDate moveInDate) {
+        if (moveInType == MoveInType.FIXED && moveInDate == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "moveInDate is required when moveInType is FIXED");
+        }
+        if (moveInType == MoveInType.IMMEDIATE && moveInDate != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "moveInDate must be null when moveInType is IMMEDIATE");
+        }
+    }
+
     private Listing findByIdOrThrow(Long id) {
         return listingRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found: " + id));
@@ -194,6 +204,8 @@ public class ListingService {
                 listing.getContractType(),
                 listing.getRoomType(),
                 listing.getLoanProducts(),
+                listing.getMoveInType(),
+                listing.getMoveInType() == null ? null : listing.getMoveInType().getLabel(),
                 listing.getMoveInDate(),
                 listing.getDeposit(),
                 listing.getMonthlyRent(),
@@ -225,7 +237,6 @@ public class ListingService {
     }
 
     private void syncExistingImages(Listing listing, List<String> requestedImagePaths) {
-        //FIXME 다시 구현
         if (requestedImagePaths == null) {
             return;
         }

@@ -53,7 +53,7 @@ public class Listing {
     @Builder.Default
     private List<LoanProduct> loanProducts = new ArrayList<>();
 
-    @Column
+    @Column(name = "move_in_date")
     private LocalDate moveInDate;
 
     @Column(nullable = false)
@@ -90,6 +90,11 @@ public class Listing {
     @Builder.Default
     private List<Image> images = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "move_in_type", nullable = false, length = 20)
+    @Builder.Default
+    private MoveInType moveInType = MoveInType.FIXED;
+
     public void addImagePath(String imagePath) {
         if (images == null) {
             images = new ArrayList<>();
@@ -115,7 +120,8 @@ public class Listing {
             Boolean sold,
             Boolean hotProperty,
             Double latitude,
-            Double longitude
+            Double longitude,
+            MoveInType moveInType
     ) {
         this.address = address;
         this.note = note;
@@ -132,6 +138,7 @@ public class Listing {
         this.hotProperty = hotProperty;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.moveInType = moveInType;
     }
 
     public void updateSold(boolean sold) {

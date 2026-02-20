@@ -14,16 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import panda.image.ImageStorageService;
-import panda.listing.dto.CreateListingRequest;
-import panda.listing.dto.CreateListingResponse;
-import panda.listing.dto.ListingResponse;
-import panda.listing.dto.UpdateListingRequest;
-import panda.listing.dto.UpdateListingSoldRequest;
-import panda.listing.enums.AvailabilityStatus;
-import panda.listing.enums.ContractType;
-import panda.listing.enums.ElevatorStatus;
-import panda.listing.enums.LoanProduct;
-import panda.listing.enums.RoomType;
+import panda.listing.dto.*;
+import panda.listing.enums.*;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -31,14 +23,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Import(ListingServiceTest.TestGeocodingConfig.class)
@@ -78,7 +65,8 @@ class ListingServiceTest {
                 10000000L,
                 550000L,
                 false,
-                false
+                false,
+                MoveInType.FIXED
         );
 
         CreateListingResponse response = listingService.create(request);
@@ -188,7 +176,8 @@ class ListingServiceTest {
                 null,
                 true,
                 false,
-                null
+                null,
+                MoveInType.FIXED
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -217,7 +206,8 @@ class ListingServiceTest {
                 null,
                 null,
                 false,
-                null
+                null,
+                MoveInType.FIXED
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -245,7 +235,8 @@ class ListingServiceTest {
                 null,
                 null,
                 false,
-                null
+                null,
+                MoveInType.FIXED
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -276,7 +267,8 @@ class ListingServiceTest {
                 null,
                 null,
                 false,
-                List.of("listings/old-2.jpg")
+                List.of("listings/old-2.jpg"),
+                MoveInType.FIXED
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -307,7 +299,8 @@ class ListingServiceTest {
                 null,
                 null,
                 false,
-                List.of("listings/keep.jpg")
+                List.of("listings/keep.jpg"),
+                MoveInType.FIXED
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -338,7 +331,8 @@ class ListingServiceTest {
                 null,
                 null,
                 false,
-                List.of("listings/unknown.jpg")
+                List.of("listings/unknown.jpg"),
+                MoveInType.FIXED
         )))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
@@ -370,6 +364,58 @@ class ListingServiceTest {
         assertThat(updated.getDeposit()).isEqualTo(10000000L);
     }
 
+    @Test
+    @DisplayName("create returns 400 when moveInType is FIXED and moveInDate is missing")
+    void createRejectsFixedWithoutMoveInDate() {
+        CreateListingRequest request = new CreateListingRequest(
+                "Seoul Gangnam Teheran-ro 1",
+                null,
+                AvailabilityStatus.AVAILABLE,
+                ElevatorStatus.YES,
+                AvailabilityStatus.AVAILABLE,
+                ContractType.JEONSE,
+                RoomType.ONE_ROOM,
+                List.of(LoanProduct.HF_YOUTH),
+                null,
+                10000000L,
+                500000L,
+                false,
+                false,
+                MoveInType.FIXED
+        );
+
+        assertThatThrownBy(() -> listingService.create(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
+    @DisplayName("create returns 400 when moveInType is IMMEDIATE and moveInDate is provided")
+    void createRejectsImmediateWithMoveInDate() {
+        CreateListingRequest request = new CreateListingRequest(
+                "Seoul Gangnam Teheran-ro 1",
+                null,
+                AvailabilityStatus.AVAILABLE,
+                ElevatorStatus.YES,
+                AvailabilityStatus.AVAILABLE,
+                ContractType.JEONSE,
+                RoomType.ONE_ROOM,
+                List.of(LoanProduct.HF_YOUTH),
+                "20260101",
+                10000000L,
+                500000L,
+                false,
+                false,
+                MoveInType.IMMEDIATE
+        );
+
+        assertThatThrownBy(() -> listingService.create(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
     private CreateListingResponse createListing(String address, boolean sold) {
         return listingService.create(defaultRequest(address, sold));
     }
@@ -388,7 +434,8 @@ class ListingServiceTest {
                 10000000L,
                 0L,
                 sold,
-                false
+                false,
+                MoveInType.FIXED
         );
     }
 

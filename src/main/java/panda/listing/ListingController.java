@@ -17,7 +17,7 @@ import panda.listing.dto.UpdateListingSoldRequest;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/listings")
+@RequestMapping("/api/v1/listings")
 public class ListingController {
 
     private final ListingService listingService;

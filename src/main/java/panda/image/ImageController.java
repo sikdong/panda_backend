@@ -11,7 +11,7 @@ import panda.image.dto.PresignedGetImageResponse;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/images")
+@RequestMapping("/api/v1/images")
 public class ImageController {
 
     private final ImageStorageService imageStorageService;

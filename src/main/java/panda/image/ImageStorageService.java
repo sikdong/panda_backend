@@ -22,7 +22,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 @Service
 public class ImageStorageService {
 
-    private static final String IMAGE_API_PREFIX = "/api/images/";
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
     private final String bucket;
@@ -122,9 +121,6 @@ public class ImageStorageService {
         }
 
         String key = imagePathOrKey.trim();
-        if (key.startsWith(IMAGE_API_PREFIX)) {
-            key = key.substring(IMAGE_API_PREFIX.length());
-        }
         if (key.startsWith("/")) {
             key = key.substring(1);
         }

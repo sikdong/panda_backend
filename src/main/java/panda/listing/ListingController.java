@@ -54,7 +54,12 @@ public class ListingController {
 
     @GetMapping("/{id:\\d+}")
     public ListingDetailResponse getById(@PathVariable Long id) {
-        return listingService.getById(id);
+        return listingService.getByIdForView(id);
+    }
+
+    @GetMapping("/{id:\\d+}/edit")
+    public ListingDetailResponse getByIdForEdit(@PathVariable Long id) {
+        return listingService.getByIdForEdit(id);
     }
 
     @PatchMapping(path = "/{id:\\d+}", consumes = MediaType.APPLICATION_JSON_VALUE)

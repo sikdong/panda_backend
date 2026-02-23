@@ -97,9 +97,15 @@ public class ListingService {
     }
 
     @Transactional
-    public ListingDetailResponse getById(Long id) {
+    public ListingDetailResponse getByIdForView(Long id) {
         Listing listing = findByIdOrThrow(id);
         listing.increaseViewCount();
+        return toDetailResponse(listing);
+    }
+
+    @Transactional(readOnly = true)
+    public ListingDetailResponse getByIdForEdit(Long id) {
+        Listing listing = findByIdOrThrow(id);
         return toDetailResponse(listing);
     }
 

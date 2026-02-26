@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import panda.listing.dto.BuildingLedgerTitleResponse;
+import panda.listing.dto.BuildingLedgerExclusivityResponse;
 import panda.listing.dto.CreateListingRequest;
 import panda.listing.dto.CreateListingResponse;
 import panda.listing.dto.ListingDetailResponse;
@@ -21,6 +23,7 @@ import panda.listing.dto.UpdateListingSoldRequest;
 public class ListingController {
 
     private final ListingService listingService;
+    private final BuildingLedgerService buildingLedgerService;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
@@ -50,6 +53,30 @@ public class ListingController {
     @GetMapping("/search")
     public List<ListingResponse> searchByAddress(@RequestParam("address") String address) {
         return listingService.searchByAddress(address);
+    }
+
+    @GetMapping("/building-ledger/titles")
+    public BuildingLedgerTitleResponse getBuildingLedgerTitles(
+            @RequestParam String sigunguCd,
+            @RequestParam String bjdongCd,
+            @RequestParam String platGbCd,
+            @RequestParam String bun,
+            @RequestParam String ji
+    ) {
+        return buildingLedgerService.getTitleInfo(sigunguCd, bjdongCd, platGbCd, bun, ji);
+    }
+
+    @GetMapping("/building-ledger/exclusivity")
+    public BuildingLedgerExclusivityResponse getBuildingLedgerExclusivity(
+            @RequestParam String sigunguCd,
+            @RequestParam String bjdongCd,
+            @RequestParam String platGbCd,
+            @RequestParam String bun,
+            @RequestParam String ji,
+            @RequestParam(required = false) String dongNm,
+            @RequestParam(required = false) String hoNm
+    ) {
+        return buildingLedgerService.getExclusivityInfo(sigunguCd, bjdongCd, platGbCd, bun, ji, dongNm, hoNm);
     }
 
     @GetMapping("/{id:\\d+}")

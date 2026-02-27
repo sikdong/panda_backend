@@ -8,10 +8,9 @@ public record BuildingLedgerTitleResponse(Data data) {
     public record TitleItem(
         String mgmBldrgstPk,
         String dongNm,
-        String mainPurpsCdNm,
         String grndFlrCnt,
-        String ugrndFlrCnt,
-        String totArea,
-        String useAprbDe
+        String useAprDay,
+        String parkingCount,
+        boolean parkingAvailable
     ) {}
 }

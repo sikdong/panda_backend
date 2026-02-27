@@ -3,20 +3,24 @@ package panda.listing;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriUtils;
 import org.springframework.web.util.UriComponentsBuilder;
-import panda.listing.dto.BuildingLedgerTitleResponse;
 import panda.listing.dto.BuildingLedgerExclusivityResponse;
+import panda.listing.dto.BuildingLedgerTitleResponse;
 
 @Service
 public class BuildingLedgerService {
+
+    private static final int DEFAULT_PAGE_NO = 1;
+    private static final int DEFAULT_NUM_OF_ROWS = 100;
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -36,14 +40,14 @@ public class BuildingLedgerService {
     }
 
     /**
-     * 표제부 조회 (getBrTitleInfo)
+     * Title ledger lookup (getBrTitleInfo)
      */
     public BuildingLedgerTitleResponse getTitleInfo(
             String sigunguCd, String bjdongCd, String platGbCd, String bun, String ji
     ) {
         validateServiceKey();
 
-        URI uri = UriComponentsBuilder.fromUriString(baseUrl)
+        List<Map<String, Object>> rawItems = fetchPagedItems(pageNo -> UriComponentsBuilder.fromUriString(baseUrl)
                 .path("/getBrTitleInfo")
                 .queryParam("serviceKey", serviceKey)
                 .queryParam("sigunguCd", sigunguCd)
@@ -51,22 +55,25 @@ public class BuildingLedgerService {
                 .queryParam("platGbCd", platGbCd)
                 .queryParam("bun", bun)
                 .queryParam("ji", ji)
+                .queryParam("pageNo", pageNo)
+                .queryParam("numOfRows", DEFAULT_NUM_OF_ROWS)
                 .queryParam("_type", "json")
                 .build(true)
-                .toUri();
-        uri= URI.create("http://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo?serviceKey=9497310aa0048d642dcc7ac7a825c10a9f9a2505d9a62be6ac6c1fb1a38a09a2&sigunguCd=11620&bjdongCd=10100&platGbCd=0&bun=1596&ji=0017&_type=json");
-        return callApiAndMapToTitleResponse(uri);
+                .toUri());
+
+        BuildingLedgerTitleResponse buildingLedgerTitleResponse = mapToTitleResponse(rawItems);
+        return buildingLedgerTitleResponse;
     }
 
     /**
-     * 전유공용면적 조회 (getBrExposPubuseAreaInfo)
+     * Exclusivity/public-use area lookup (getBrExposPubuseAreaInfo)
      */
     public BuildingLedgerExclusivityResponse getExclusivityInfo(
             String sigunguCd, String bjdongCd, String platGbCd, String bun, String ji, String dongNm, String hoNm
     ) {
         validateServiceKey();
 
-        URI uri = UriComponentsBuilder.fromUriString(baseUrl)
+        List<Map<String, Object>> rawItems = fetchPagedItems(pageNo -> UriComponentsBuilder.fromUriString(baseUrl)
                 .path("/getBrExposPubuseAreaInfo")
                 .queryParam("serviceKey", serviceKey)
                 .queryParam("sigunguCd", sigunguCd)
@@ -74,29 +81,32 @@ public class BuildingLedgerService {
                 .queryParam("platGbCd", platGbCd)
                 .queryParam("bun", bun)
                 .queryParam("ji", ji)
-                .queryParam("dongNm", dongNm)
-                .queryParam("hoNm", hoNm)
+                .queryParam("dongNm", encodeQueryParam(dongNm))
+                .queryParam("hoNm", encodeQueryParam(hoNm))
+                .queryParam("pageNo", pageNo)
+                .queryParam("numOfRows", DEFAULT_NUM_OF_ROWS)
                 .queryParam("_type", "json")
                 .build(true)
-                .toUri();
-
-        return callApiAndMapToExclusivityResponse(uri);
+                .toUri());
+        System.out.println("rawItems  === "+ rawItems);
+        BuildingLedgerExclusivityResponse buildingLedgerExclusivityResponse = mapToExclusivityResponse(rawItems);
+        System.out.println(buildingLedgerExclusivityResponse);
+        return buildingLedgerExclusivityResponse;
     }
 
-    private BuildingLedgerTitleResponse callApiAndMapToTitleResponse(URI uri) {
-        Map<String, Object> responseMap = requestResponseMap(uri);
-
-        List<Map<String, Object>> rawItems = extractRawItems(responseMap);
+    private BuildingLedgerTitleResponse mapToTitleResponse(List<Map<String, Object>> rawItems) {
         List<BuildingLedgerTitleResponse.TitleItem> items = rawItems.stream()
-                .map(m -> new BuildingLedgerTitleResponse.TitleItem(
-                        Objects.toString(m.get("mgmBldrgstPk"), ""),
-                        Objects.toString(m.get("dongNm"), ""),
-                        Objects.toString(m.get("mainPurpsCdNm"), ""),
-                        Objects.toString(m.get("grndFlrCnt"), "0"),
-                        Objects.toString(m.get("ugrndFlrCnt"), "0"),
-                        Objects.toString(m.get("totArea"), "0"),
-                        Objects.toString(m.get("useAprvDe"), "")
-                ))
+                .map(m -> {
+                    int parkingCount = resolveParkingCount(m);
+                    return new BuildingLedgerTitleResponse.TitleItem(
+                            getString(m, "mgmBldrgstPk", ""),
+                            getString(m, "dongNm", ""),
+                            getString(m, "grndFlrCnt", "0"),
+                            getFirstString(m, "", "useAprDay", "useAprvDe"),
+                            Integer.toString(parkingCount),
+                            parkingCount > 0
+                    );
+                })
                 .toList();
 
         return new BuildingLedgerTitleResponse(
@@ -106,18 +116,12 @@ public class BuildingLedgerService {
         );
     }
 
-    private BuildingLedgerExclusivityResponse callApiAndMapToExclusivityResponse(URI uri) {
-        Map<String, Object> responseMap = requestResponseMap(uri);
-
-        List<Map<String, Object>> rawItems = extractRawItems(responseMap);
+    private BuildingLedgerExclusivityResponse mapToExclusivityResponse(List<Map<String, Object>> rawItems) {
         List<BuildingLedgerExclusivityResponse.ExclusivityItem> items = rawItems.stream()
+                .filter(this::isExclusiveArea)
                 .map(m -> new BuildingLedgerExclusivityResponse.ExclusivityItem(
-                        Objects.toString(m.get("bldNm"), ""),
-                        Objects.toString(m.get("dongNm"), ""),
-                        Objects.toString(m.get("hoNm"), ""),
-                        Objects.toString(m.get("flrNo"), ""),
-                        Objects.toString(m.get("area"), "0"),
-                        Objects.toString(m.get("mainPurpsCdNm"), "")
+                        getString(m, "flrNo", ""),
+                        getString(m, "area", "0")
                 ))
                 .toList();
 
@@ -132,6 +136,29 @@ public class BuildingLedgerService {
         if (serviceKey == null || serviceKey.isBlank()) {
             throw new IllegalStateException("Building Ledger Service Key is missing. Set app.building-ledger.service-key.");
         }
+    }
+
+    private List<Map<String, Object>> fetchPagedItems(PageUriBuilder pageUriBuilder) {
+        List<Map<String, Object>> allItems = new ArrayList<>();
+        int pageNo = DEFAULT_PAGE_NO;
+
+        while (true) {
+            URI uri = pageUriBuilder.build(pageNo);
+            Map<String, Object> responseMap = requestResponseMap(uri);
+            List<Map<String, Object>> pageItems = extractRawItems(responseMap);
+            allItems.addAll(pageItems);
+
+            int totalCount = extractTotalCount(responseMap);
+            if (totalCount <= 0 || allItems.size() >= totalCount) {
+                break;
+            }
+            if (pageItems.isEmpty()) {
+                break;
+            }
+            pageNo++;
+        }
+
+        return allItems;
     }
 
     private Map<String, Object> requestResponseMap(URI uri) {
@@ -164,6 +191,82 @@ public class BuildingLedgerService {
         return value.substring(0, maxLength) + "...(truncated)";
     }
 
+    private boolean isExclusiveArea(Map<String, Object> item) {
+        String exposPubuseGbCdNm = getString(item, "exposPubuseGbCdNm", "");
+        return "\uC804\uC720".equals(exposPubuseGbCdNm);
+    }
+
+    private int resolveParkingCount(Map<String, Object> item) {
+        int totalParking = getInt(item, "totPkngCnt");
+        if (totalParking > 0) {
+            return totalParking;
+        }
+        return getInt(item, "indrAutoUtcnt")
+                + getInt(item, "oudrAutoUtcnt")
+                + getInt(item, "indrMechUtcnt")
+                + getInt(item, "oudrMechUtcnt");
+    }
+
+    private int getInt(Map<String, Object> item, String key) {
+        String value = getString(item, key, "0");
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            try {
+                return (int) Double.parseDouble(value);
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+    }
+
+    private String getString(Map<String, Object> item, String key, String defaultValue) {
+        Object value = item.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        String text = value.toString().trim();
+        return text.isEmpty() ? defaultValue : text;
+    }
+
+    private String getFirstString(Map<String, Object> item, String defaultValue, String... keys) {
+        for (String key : keys) {
+            String value = getString(item, key, "");
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return defaultValue;
+    }
+
+    private String encodeQueryParam(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        return UriUtils.encodeQueryParam(value, StandardCharsets.UTF_8);
+    }
+
+    @SuppressWarnings("unchecked")
+    private int extractTotalCount(Map<String, Object> responseMap) {
+        if (responseMap == null || !responseMap.containsKey("response")) {
+            return 0;
+        }
+        Map<String, Object> response = (Map<String, Object>) responseMap.get("response");
+        if (response == null || !(response.get("body") instanceof Map<?, ?> bodyObj)) {
+            return 0;
+        }
+        Map<String, Object> body = (Map<String, Object>) bodyObj;
+        Object totalCountObj = body.get("totalCount");
+        if (totalCountObj == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(totalCountObj.toString());
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> extractRawItems(Map<String, Object> responseMap) {
         if (responseMap == null || !responseMap.containsKey("response")) {
@@ -183,5 +286,10 @@ public class BuildingLedgerService {
             return List.of((Map<String, Object>) itemObj);
         }
         return Collections.emptyList();
+    }
+
+    @FunctionalInterface
+    private interface PageUriBuilder {
+        URI build(int pageNo);
     }
 }

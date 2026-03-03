@@ -88,9 +88,7 @@ public class BuildingLedgerService {
                 .queryParam("_type", "json")
                 .build(true)
                 .toUri());
-        System.out.println("rawItems  === "+ rawItems);
         BuildingLedgerExclusivityResponse buildingLedgerExclusivityResponse = mapToExclusivityResponse(rawItems);
-        System.out.println(buildingLedgerExclusivityResponse);
         return buildingLedgerExclusivityResponse;
     }
 

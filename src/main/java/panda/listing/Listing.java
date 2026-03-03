@@ -30,7 +30,7 @@ public class Listing {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private AvailabilityStatus parking;
+    private ParkingStatus parking;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -38,7 +38,7 @@ public class Listing {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private AvailabilityStatus pet;
+    private ParkingStatus pet;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -108,9 +108,9 @@ public class Listing {
     public void updateDetails(
             String address,
             String note,
-            AvailabilityStatus parking,
+            ParkingStatus parking,
             ElevatorStatus elevator,
-            AvailabilityStatus pet,
+            ParkingStatus pet,
             ContractType contractType,
             RoomType roomType,
             List<LoanProduct> loanProducts,

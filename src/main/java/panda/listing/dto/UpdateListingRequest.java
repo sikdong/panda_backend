@@ -9,9 +9,9 @@ import panda.listing.enums.*;
 public record UpdateListingRequest(
         @Size(max = 200) String address,
         @Size(max = 300) String note,
-        AvailabilityStatus parking,
+        ParkingStatus parking,
         ElevatorStatus elevator,
-        AvailabilityStatus pet,
+        ParkingStatus pet,
         ContractType contractType,
         RoomType roomType,
         List<LoanProduct> loanProducts,

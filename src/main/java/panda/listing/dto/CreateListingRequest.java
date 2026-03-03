@@ -12,9 +12,9 @@ import panda.listing.enums.*;
 public record CreateListingRequest(
         @NotBlank @Size(max = 200) String address,
         @Size(max = 300) String note,
-        @NotNull AvailabilityStatus parking,
+        @NotNull ParkingStatus parking,
         @NotNull ElevatorStatus elevator,
-        @NotNull AvailabilityStatus pet,
+        @NotNull ParkingStatus pet,
         @NotNull ContractType contractType,
         @NotNull RoomType roomType,
         @NotEmpty List<LoanProduct> loanProducts,

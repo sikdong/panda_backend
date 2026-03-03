@@ -1,6 +1,6 @@
 package panda.listing.enums;
 
-public enum AvailabilityStatus {
+public enum ParkingStatus {
     AVAILABLE,
     UNAVAILABLE,
     CHECK_REQUIRED

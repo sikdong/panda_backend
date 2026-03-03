@@ -5,6 +5,7 @@ import lombok.*;
 import panda.image.Image;
 import panda.listing.enums.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -62,6 +63,28 @@ public class Listing {
     @Column(nullable = false)
     private Long monthlyRent;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal exclusivityArea;
+
+    @Column(name = "use_apr_day")
+    private LocalDate useAprDay;
+
+    private Integer totalFloors;
+
+    private Integer currentFloor;
+
+    private Integer parkingCount;
+
+    private Long maintenanceFee;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private LoanStatus loanStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private IllegalBuildingStatus illegalBuildingStatus;
+
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
     private boolean sold = false;
@@ -117,6 +140,14 @@ public class Listing {
             LocalDate moveInDate,
             Long deposit,
             Long monthlyRent,
+            BigDecimal exclusivityArea,
+            LocalDate useAprDay,
+            Integer totalFloors,
+            Integer currentFloor,
+            Integer parkingCount,
+            Long maintenanceFee,
+            LoanStatus loanStatus,
+            IllegalBuildingStatus illegalBuildingStatus,
             Boolean sold,
             Boolean hotProperty,
             Double latitude,
@@ -134,6 +165,14 @@ public class Listing {
         this.moveInDate = moveInDate;
         this.deposit = deposit;
         this.monthlyRent = monthlyRent;
+        this.exclusivityArea = exclusivityArea;
+        this.useAprDay = useAprDay;
+        this.totalFloors = totalFloors;
+        this.currentFloor = currentFloor;
+        this.parkingCount = parkingCount;
+        this.maintenanceFee = maintenanceFee;
+        this.loanStatus = loanStatus;
+        this.illegalBuildingStatus = illegalBuildingStatus;
         this.sold = sold;
         this.hotProperty = hotProperty;
         this.latitude = latitude;

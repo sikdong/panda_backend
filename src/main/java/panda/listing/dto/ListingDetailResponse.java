@@ -1,5 +1,6 @@
 package panda.listing.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -19,6 +20,14 @@ public record ListingDetailResponse(
         LocalDate moveInDate,
         Long deposit,
         Long monthlyRent,
+        BigDecimal exclusivityArea,
+        LocalDate useAprDay,
+        Integer totalFloors,
+        Integer currentFloor,
+        Integer parkingCount,
+        Long maintenanceFee,
+        LoanStatus loanStatus,
+        IllegalBuildingStatus illegalBuildingStatus,
         Long viewCount,
         Boolean hotProperty,
         List<String> imagePaths,

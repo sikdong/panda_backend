@@ -43,7 +43,7 @@ public class ListingService {
     @Transactional
     public CreateListingResponse create(CreateListingRequest request, List<MultipartFile> imageFiles) {
         Coordinate coordinate = geocodingService.convertAddressToCoordinate(request.address());
-        LocalDate moveInDate = parseMoveInDate(request.moveInDate());
+        LocalDate moveInDate = request.moveInDate();
         validateMoveInCombination(request.moveInType(), moveInDate);
 
         Listing listing = Listing.builder()
@@ -58,6 +58,14 @@ public class ListingService {
                 .moveInDate(moveInDate)
                 .deposit(request.deposit())
                 .monthlyRent(request.monthlyRent())
+                .exclusivityArea(request.exclusivityArea())
+                .useAprDay(request.useAprDay())
+                .totalFloors(request.totalFloors())
+                .currentFloor(request.currentFloor())
+                .parkingCount(request.parkingCount())
+                .maintenanceFee(request.maintenanceFee())
+                .loanStatus(request.loanStatus())
+                .illegalBuildingStatus(request.illegalBuildingStatus())
                 .sold(Boolean.TRUE.equals(request.sold()))
                 .hotProperty(Boolean.TRUE.equals(request.hotProperty()))
                 .latitude(coordinate.latitude())
@@ -134,8 +142,13 @@ public class ListingService {
                 longitude = coordinate.longitude();
             }
         }
-        LocalDate moveInDate = parseMoveInDate(request.moveInDate());
-        validateMoveInCombination(request.moveInType(), moveInDate);
+        LocalDate moveInDate = request.moveInDate() != null
+                ? request.moveInDate()
+                : listing.getMoveInDate();
+        MoveInType moveInType = request.moveInType() != null
+                ? request.moveInType()
+                : listing.getMoveInType();
+        validateMoveInCombination(moveInType, moveInDate);
 
         listing.updateDetails(
                 address,
@@ -149,11 +162,19 @@ public class ListingService {
                 moveInDate,
                 request.deposit() != null ? request.deposit() : listing.getDeposit(),
                 request.monthlyRent() != null ? request.monthlyRent() : listing.getMonthlyRent(),
+                request.exclusivityArea() != null ? request.exclusivityArea() : listing.getExclusivityArea(),
+                request.useAprDay() != null ? request.useAprDay() : listing.getUseAprDay(),
+                request.totalFloors() != null ? request.totalFloors() : listing.getTotalFloors(),
+                request.currentFloor() != null ? request.currentFloor() : listing.getCurrentFloor(),
+                request.parkingCount() != null ? request.parkingCount() : listing.getParkingCount(),
+                request.maintenanceFee() != null ? request.maintenanceFee() : listing.getMaintenanceFee(),
+                request.loanStatus() != null ? request.loanStatus() : listing.getLoanStatus(),
+                request.illegalBuildingStatus() != null ? request.illegalBuildingStatus() : listing.getIllegalBuildingStatus(),
                 request.sold() != null ? request.sold() : listing.isSold(),
                 request.hotProperty() != null ? request.hotProperty() : listing.isHotProperty(),
                 latitude,
                 longitude,
-                request.moveInType()
+                moveInType
         );
 
         List<MultipartFile> safeImages = images == null ? List.of() : images;
@@ -177,13 +198,6 @@ public class ListingService {
     public void patchSold(Long id, UpdateListingSoldRequest request) {
         Listing listing = findByIdOrThrow(id);
         listing.updateSold(request.sold());
-    }
-
-    private LocalDate parseMoveInDate(String moveInDate) {
-        if (moveInDate == null || moveInDate.isBlank()) {
-            return null;
-        }
-        return LocalDate.parse(moveInDate.trim(), MOVE_IN_DATE_FORMATTER);
     }
 
     private void validateMoveInCombination(MoveInType moveInType, LocalDate moveInDate) {
@@ -215,6 +229,14 @@ public class ListingService {
                 listing.getMoveInDate(),
                 listing.getDeposit(),
                 listing.getMonthlyRent(),
+                listing.getExclusivityArea(),
+                listing.getUseAprDay(),
+                listing.getTotalFloors(),
+                listing.getCurrentFloor(),
+                listing.getParkingCount(),
+                listing.getMaintenanceFee(),
+                listing.getLoanStatus(),
+                listing.getIllegalBuildingStatus(),
                 listing.getViewCount(),
                 listing.isHotProperty(),
                 listing.getImages().stream()

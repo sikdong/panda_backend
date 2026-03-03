@@ -2,6 +2,8 @@ package panda.listing.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import panda.listing.enums.*;
@@ -15,12 +17,20 @@ public record UpdateListingRequest(
         ContractType contractType,
         RoomType roomType,
         List<LoanProduct> loanProducts,
-        String moveInDate,
+        LocalDate moveInDate,
         @Min(0) Long deposit,
         @Min(0) Long monthlyRent,
         Boolean sold,
         Boolean hotProperty,
         List<@Size(max = 500) String> imagePaths,
-        MoveInType moveInType
+        MoveInType moveInType,
+        BigDecimal exclusivityArea,
+        LocalDate useAprDay,
+        Integer totalFloors,
+        Integer currentFloor,
+        Integer parkingCount,
+        Long maintenanceFee,
+        LoanStatus loanStatus,
+        IllegalBuildingStatus illegalBuildingStatus
 ) {
 }

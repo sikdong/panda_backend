@@ -17,6 +17,7 @@ import panda.image.ImageStorageService;
 import panda.listing.dto.*;
 import panda.listing.enums.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -57,16 +58,24 @@ class ListingServiceTest {
                 "new",
                 ParkingStatus.AVAILABLE,
                 ElevatorStatus.YES,
-                ParkingStatus.CHECK_REQUIRED,
+                PetPolicy.CHECK_REQUIRED,
                 ContractType.MONTHLY_RENT,
                 RoomType.ONE_ROOM,
                 List.of(LoanProduct.KAKAO_BANK, LoanProduct.HF_YOUTH),
-                "20260214",
+                LocalDate.of(2026, 2, 14),
                 10000000L,
                 550000L,
                 false,
                 false,
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                new BigDecimal("18.75"),
+                LocalDate.of(2020, 5, 1),
+                15,
+                7,
+                12,
+                85000L,
+                LoanStatus.BELOW_30,
+                IllegalBuildingStatus.NO
         );
 
         CreateListingResponse response = listingService.create(request);
@@ -81,8 +90,56 @@ class ListingServiceTest {
         assertThat(saved.getLongitude()).isEqualTo(126.9780);
         assertThat(saved.getDeposit()).isEqualTo(10000000L);
         assertThat(saved.getMonthlyRent()).isEqualTo(550000L);
+        assertThat(saved.getExclusivityArea()).isEqualByComparingTo(new BigDecimal("18.75"));
+        assertThat(saved.getUseAprDay()).isEqualTo(LocalDate.of(2020, 5, 1));
+        assertThat(saved.getTotalFloors()).isEqualTo(15);
+        assertThat(saved.getCurrentFloor()).isEqualTo(7);
+        assertThat(saved.getParkingCount()).isEqualTo(12);
+        assertThat(saved.getMaintenanceFee()).isEqualTo(85000L);
+        assertThat(saved.getLoanStatus()).isEqualTo(LoanStatus.BELOW_30);
+        assertThat(saved.getIllegalBuildingStatus()).isEqualTo(IllegalBuildingStatus.NO);
         assertThat(saved.isSold()).isFalse();
         assertThat(saved.getLoanProducts()).containsExactly(LoanProduct.KAKAO_BANK, LoanProduct.HF_YOUTH);
+    }
+
+    @Test
+    @DisplayName("상세 조회는 생성된 확장 필드를 그대로 반환한다")
+    void getByIdForEditReturnsExtendedFields() {
+        CreateListingResponse created = listingService.create(new CreateListingRequest(
+                "Seoul Seocho Banpo-daero 1",
+                null,
+                ParkingStatus.AVAILABLE,
+                ElevatorStatus.NO,
+                PetPolicy.AVAILABLE,
+                ContractType.JEONSE,
+                RoomType.ONE_ROOM,
+                List.of(LoanProduct.HF_YOUTH),
+                LocalDate.of(2026, 2, 14),
+                10000000L,
+                0L,
+                false,
+                false,
+                MoveInType.FIXED,
+                new BigDecimal("14.20"),
+                LocalDate.of(2021, 7, 15),
+                10,
+                4,
+                8,
+                60000L,
+                LoanStatus.NONE,
+                IllegalBuildingStatus.NO
+        ));
+
+        ListingDetailResponse detail = listingService.getByIdForEdit(created.id());
+
+        assertThat(detail.exclusivityArea()).isEqualByComparingTo(new BigDecimal("14.20"));
+        assertThat(detail.useAprDay()).isEqualTo(LocalDate.of(2021, 7, 15));
+        assertThat(detail.totalFloors()).isEqualTo(10);
+        assertThat(detail.currentFloor()).isEqualTo(4);
+        assertThat(detail.parkingCount()).isEqualTo(8);
+        assertThat(detail.maintenanceFee()).isEqualTo(60000L);
+        assertThat(detail.loanStatus()).isEqualTo(LoanStatus.NONE);
+        assertThat(detail.illegalBuildingStatus()).isEqualTo(IllegalBuildingStatus.NO);
     }
 
     @Test
@@ -177,7 +234,15 @@ class ListingServiceTest {
                 true,
                 false,
                 null,
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -207,7 +272,15 @@ class ListingServiceTest {
                 null,
                 false,
                 null,
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -236,7 +309,15 @@ class ListingServiceTest {
                 null,
                 false,
                 null,
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -268,7 +349,15 @@ class ListingServiceTest {
                 null,
                 false,
                 List.of("listings/old-2.jpg"),
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -300,7 +389,15 @@ class ListingServiceTest {
                 null,
                 false,
                 List.of("listings/keep.jpg"),
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -332,7 +429,15 @@ class ListingServiceTest {
                 null,
                 false,
                 List.of("listings/unknown.jpg"),
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         )))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
@@ -365,14 +470,14 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("create returns 400 when moveInType is FIXED and moveInDate is missing")
+    @DisplayName("입주 옵션이 지정날짜인데 입주 가능일이 없으면 400 에러가 발생된다")
     void createRejectsFixedWithoutMoveInDate() {
         CreateListingRequest request = new CreateListingRequest(
                 "Seoul Gangnam Teheran-ro 1",
                 null,
                 ParkingStatus.AVAILABLE,
                 ElevatorStatus.YES,
-                ParkingStatus.AVAILABLE,
+                PetPolicy.AVAILABLE,
                 ContractType.JEONSE,
                 RoomType.ONE_ROOM,
                 List.of(LoanProduct.HF_YOUTH),
@@ -381,7 +486,15 @@ class ListingServiceTest {
                 500000L,
                 false,
                 false,
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         assertThatThrownBy(() -> listingService.create(request))
@@ -391,23 +504,31 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("create returns 400 when moveInType is IMMEDIATE and moveInDate is provided")
+    @DisplayName("입주 옵션이 즉시인데 입주 가능일이 존재하면 400 에러가 발생한다")
     void createRejectsImmediateWithMoveInDate() {
         CreateListingRequest request = new CreateListingRequest(
                 "Seoul Gangnam Teheran-ro 1",
                 null,
                 ParkingStatus.AVAILABLE,
                 ElevatorStatus.YES,
-                ParkingStatus.AVAILABLE,
+                PetPolicy.AVAILABLE,
                 ContractType.JEONSE,
                 RoomType.ONE_ROOM,
                 List.of(LoanProduct.HF_YOUTH),
-                "20260101",
+                LocalDate.now(),
                 10000000L,
                 500000L,
                 false,
                 false,
-                MoveInType.IMMEDIATE
+                MoveInType.IMMEDIATE,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
 
         assertThatThrownBy(() -> listingService.create(request))
@@ -426,16 +547,24 @@ class ListingServiceTest {
                 null,
                 ParkingStatus.AVAILABLE,
                 ElevatorStatus.NO,
-                ParkingStatus.AVAILABLE,
+                PetPolicy.AVAILABLE,
                 ContractType.JEONSE,
                 RoomType.ONE_ROOM,
                 List.of(LoanProduct.HF_YOUTH),
-                "20260101",
+                LocalDate.now(),
                 10000000L,
                 0L,
                 sold,
                 false,
-                MoveInType.FIXED
+                MoveInType.FIXED,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
     }
 

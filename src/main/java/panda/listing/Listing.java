@@ -38,7 +38,7 @@ public class Listing {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private ParkingStatus pet;
+    private PetPolicy pet;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -110,7 +110,7 @@ public class Listing {
             String note,
             ParkingStatus parking,
             ElevatorStatus elevator,
-            ParkingStatus pet,
+            PetPolicy pet,
             ContractType contractType,
             RoomType roomType,
             List<LoanProduct> loanProducts,

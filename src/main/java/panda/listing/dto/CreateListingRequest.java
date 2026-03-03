@@ -14,7 +14,7 @@ public record CreateListingRequest(
         @Size(max = 300) String note,
         @NotNull ParkingStatus parking,
         @NotNull ElevatorStatus elevator,
-        @NotNull ParkingStatus pet,
+        @NotNull PetPolicy pet,
         @NotNull ContractType contractType,
         @NotNull RoomType roomType,
         @NotEmpty List<LoanProduct> loanProducts,

@@ -11,7 +11,7 @@ public record UpdateListingRequest(
         @Size(max = 300) String note,
         ParkingStatus parking,
         ElevatorStatus elevator,
-        ParkingStatus pet,
+        PetPolicy pet,
         ContractType contractType,
         RoomType roomType,
         List<LoanProduct> loanProducts,

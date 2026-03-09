@@ -61,6 +61,7 @@ public class ListingService {
                 .maintenanceFee(request.maintenanceFee())
                 .loanStatus(request.loanStatus())
                 .illegalBuildingStatus(request.illegalBuildingStatus())
+                .description(request.description())
                 .sold(Boolean.TRUE.equals(request.sold()))
                 .hotProperty(Boolean.TRUE.equals(request.hotProperty()))
                 .latitude(coordinate.latitude())

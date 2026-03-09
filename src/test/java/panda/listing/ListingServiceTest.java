@@ -75,7 +75,8 @@ class ListingServiceTest {
                 12,
                 85000L,
                 LoanStatus.BELOW_30,
-                IllegalBuildingStatus.NO
+                IllegalBuildingStatus.NO,
+                "room condition is excellent"
         );
 
         CreateListingResponse response = listingService.create(request);
@@ -98,6 +99,7 @@ class ListingServiceTest {
         assertThat(saved.getMaintenanceFee()).isEqualTo(85000L);
         assertThat(saved.getLoanStatus()).isEqualTo(LoanStatus.BELOW_30);
         assertThat(saved.getIllegalBuildingStatus()).isEqualTo(IllegalBuildingStatus.NO);
+        assertThat(saved.getDescription()).isEqualTo("room condition is excellent");
         assertThat(saved.isSold()).isFalse();
         assertThat(saved.getLoanProducts()).containsExactly(LoanProduct.KAKAO_BANK, LoanProduct.HF_YOUTH);
     }
@@ -127,7 +129,8 @@ class ListingServiceTest {
                 8,
                 60000L,
                 LoanStatus.NONE,
-                IllegalBuildingStatus.NO
+                IllegalBuildingStatus.NO,
+                "quiet neighborhood"
         ));
 
         ListingDetailResponse detail = listingService.getByIdForEdit(created.id());
@@ -140,6 +143,7 @@ class ListingServiceTest {
         assertThat(detail.maintenanceFee()).isEqualTo(60000L);
         assertThat(detail.loanStatus()).isEqualTo(LoanStatus.NONE);
         assertThat(detail.illegalBuildingStatus()).isEqualTo(IllegalBuildingStatus.NO);
+        assertThat(detail.description()).isEqualTo("quiet neighborhood");
     }
 
     @Test
@@ -500,6 +504,7 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -527,6 +532,7 @@ class ListingServiceTest {
                 false,
                 false,
                 MoveInType.IMMEDIATE,
+                null,
                 null,
                 null,
                 null,
@@ -563,6 +569,7 @@ class ListingServiceTest {
                 sold,
                 false,
                 MoveInType.FIXED,
+                null,
                 null,
                 null,
                 null,

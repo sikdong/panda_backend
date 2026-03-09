@@ -31,6 +31,7 @@ public record ListingDetailResponse(
         Long viewCount,
         Boolean hotProperty,
         List<String> imagePaths,
-        List<String> imageFilePaths
+        List<String> imageFilePaths,
+        String description
 ) {
 }

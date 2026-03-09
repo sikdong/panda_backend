@@ -242,7 +242,8 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                "Test"
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -280,7 +281,8 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                "Test"
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -317,7 +319,8 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                "Test"
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -357,7 +360,8 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                "Test"
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -397,7 +401,8 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                "Test"
         ));
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
@@ -437,7 +442,8 @@ class ListingServiceTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                "Test"
         )))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())

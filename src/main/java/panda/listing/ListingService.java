@@ -247,7 +247,8 @@ public class ListingService {
                         .toList(),
                 listing.getImages().stream()
                         .map(image -> image.getImagePath())
-                        .toList()
+                        .toList(),
+                listing.getDescription()
         );
     }
 

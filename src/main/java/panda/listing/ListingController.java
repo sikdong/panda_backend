@@ -8,14 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import panda.listing.dto.BuildingLedgerTitleResponse;
-import panda.listing.dto.BuildingLedgerExclusivityResponse;
-import panda.listing.dto.CreateListingRequest;
-import panda.listing.dto.CreateListingResponse;
-import panda.listing.dto.ListingDetailResponse;
-import panda.listing.dto.ListingResponse;
-import panda.listing.dto.UpdateListingRequest;
-import panda.listing.dto.UpdateListingSoldRequest;
+import panda.listing.dto.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,6 +36,11 @@ public class ListingController {
     @GetMapping("/summaries")
     public List<ListingResponse> getSummaries() {
         return listingService.getSummaries();
+    }
+
+    @GetMapping("/admin")
+    public List<ListingAdminResponse> getAdminListings() {
+        return listingService.getAdminListings();
     }
 
     @GetMapping("/unsold")

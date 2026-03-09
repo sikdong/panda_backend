@@ -29,6 +29,9 @@ public class Listing {
     @Column(length = 300)
     private String note;
 
+    @Column(length = 1000)
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ParkingStatus parking;
@@ -152,7 +155,8 @@ public class Listing {
             Boolean hotProperty,
             Double latitude,
             Double longitude,
-            MoveInType moveInType
+            MoveInType moveInType,
+            String description
     ) {
         this.address = address;
         this.note = note;
@@ -178,6 +182,7 @@ public class Listing {
         this.latitude = latitude;
         this.longitude = longitude;
         this.moveInType = moveInType;
+        this.description = description;
     }
 
     public void updateSold(boolean sold) {

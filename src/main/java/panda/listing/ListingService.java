@@ -16,12 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 import panda.image.ImageStorageService;
-import panda.listing.dto.CreateListingRequest;
-import panda.listing.dto.CreateListingResponse;
-import panda.listing.dto.ListingDetailResponse;
-import panda.listing.dto.ListingResponse;
-import panda.listing.dto.UpdateListingRequest;
-import panda.listing.dto.UpdateListingSoldRequest;
+import panda.listing.dto.*;
 import panda.listing.enums.MoveInType;
 
 @Service
@@ -82,15 +77,22 @@ public class ListingService {
 
     @Transactional(readOnly = true)
     public List<ListingResponse> getSummaries() {
-        return listingRepository.findAllByOrderByUpdatedAtDescIdDesc().stream()
+        return listingRepository.findAllByOrderByUpdatedAtDesc().stream()
                 .map(this::toSummaryResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ListingResponse> getUnsoldListings() {
-        return listingRepository.findBySoldFalseOrderByUpdatedAtDescIdDesc().stream()
+        return listingRepository.findBySoldFalseOrderByUpdatedAtDesc().stream()
                 .map(this::toSummaryResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ListingAdminResponse> getAdminListings() {
+        return listingRepository.findAllByOrderByUpdatedAtDesc().stream()
+                .map(ListingAdminResponse::toAdminResponse)
                 .toList();
     }
 
@@ -99,7 +101,7 @@ public class ListingService {
         if (keyword == null || keyword.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Address keyword must not be blank");
         }
-        return listingRepository.findByAddressContainingIgnoreCaseOrderByUpdatedAtDescIdDesc(keyword.trim()).stream()
+        return listingRepository.findByAddressContainingIgnoreCaseOrderByUpdatedAtDesc(keyword.trim()).stream()
                 .map(this::toSummaryResponse)
                 .toList();
     }
@@ -174,7 +176,8 @@ public class ListingService {
                 request.hotProperty() != null ? request.hotProperty() : listing.isHotProperty(),
                 latitude,
                 longitude,
-                moveInType
+                moveInType,
+                request.description() != null ? request.description() : listing.getDescription()
         );
 
         List<MultipartFile> safeImages = images == null ? List.of() : images;

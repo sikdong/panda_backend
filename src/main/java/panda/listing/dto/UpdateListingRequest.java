@@ -31,6 +31,7 @@ public record UpdateListingRequest(
         Integer parkingCount,
         Long maintenanceFee,
         LoanStatus loanStatus,
-        IllegalBuildingStatus illegalBuildingStatus
+        IllegalBuildingStatus illegalBuildingStatus,
+        String description
 ) {
 }

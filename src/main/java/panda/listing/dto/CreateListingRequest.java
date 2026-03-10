@@ -26,6 +26,7 @@ public record CreateListingRequest(
         @NotNull @Min(0) Long monthlyRent,
         Boolean sold,
         Boolean hotProperty,
+        List<@Size(max = 500) String> imagePaths,
         MoveInType moveInType,
         BigDecimal exclusivityArea,
         LocalDate useAprDay,

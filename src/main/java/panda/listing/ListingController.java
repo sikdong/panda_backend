@@ -18,7 +18,7 @@ public class ListingController {
     private final ListingService listingService;
     private final BuildingLedgerService buildingLedgerService;
 
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateListingResponse create(@Valid @RequestBody CreateListingRequest request) {
         return listingService.create(request);
@@ -87,7 +87,7 @@ public class ListingController {
         return listingService.getByIdForEdit(id);
     }
 
-    @PatchMapping(path = "/{id:\\d+}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(path = "/{id:\\d+}")
     public ResponseEntity<Void> patch(
             @PathVariable Long id,
             @Valid @RequestBody UpdateListingRequest request

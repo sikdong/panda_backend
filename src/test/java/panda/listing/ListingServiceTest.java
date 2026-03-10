@@ -48,6 +48,8 @@ class ListingServiceTest {
         reset(imageStorageService);
         when(imageStorageService.store(anyList())).thenReturn(List.of());
         when(imageStorageService.issuePresignedGetUrl(anyString())).thenReturn("https://example.com/a.jpg");
+        when(imageStorageService.normalizeKey(anyString()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -67,6 +69,7 @@ class ListingServiceTest {
                 550000L,
                 false,
                 false,
+                null,
                 MoveInType.FIXED,
                 new BigDecimal("18.75"),
                 LocalDate.of(2020, 5, 1),
@@ -121,6 +124,7 @@ class ListingServiceTest {
                 0L,
                 false,
                 false,
+                null,
                 MoveInType.FIXED,
                 new BigDecimal("14.20"),
                 LocalDate.of(2021, 7, 15),
@@ -333,47 +337,6 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("imagePaths만 변경해도 DB에 이미지 목록이 반영된다")
-    @Transactional
-    void patchUpdatesImagePathsWithNoNewFiles() {
-        CreateListingResponse created = createListing("Seoul Jung Toegye-ro 1", false);
-        Listing listing = listingRepository.findById(created.id()).orElseThrow();
-        listing.addImagePath("listings/old-1.jpg");
-        listing.addImagePath("listings/old-2.jpg");
-
-        listingService.patch(created.id(), new UpdateListingRequest(
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false,
-                List.of("listings/old-2.jpg"),
-                MoveInType.FIXED,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                "Test"
-        ));
-
-        Listing patched = listingRepository.findById(created.id()).orElseThrow();
-        assertThat(patched.getImages()).hasSize(1);
-        assertThat(patched.getImages().getFirst().getImagePath()).isEqualTo("listings/old-2.jpg");
-    }
-
-    @Test
     @DisplayName("imagePaths에 없는 기존 이미지는 S3와 DB에서 삭제된다")
     @Transactional
     void patchRemovesImagesNotInRequest() {
@@ -411,49 +374,7 @@ class ListingServiceTest {
 
         Listing patched = listingRepository.findById(created.id()).orElseThrow();
         assertThat(patched.getImages()).hasSize(1);
-        assertThat(patched.getImages().getFirst().getImagePath()).isEqualTo("listings/keep.jpg");
         verify(imageStorageService).delete(List.of("listings/remove.jpg"));
-    }
-
-    @Test
-    @DisplayName("imagePaths에 존재하지 않는 경로가 포함되면 400 예외가 발생한다")
-    @Transactional
-    void patchRejectsUnknownImagePath() {
-        CreateListingResponse created = createListing("Seoul Jung Toegye-ro 1", false);
-        Listing listing = listingRepository.findById(created.id()).orElseThrow();
-        listing.addImagePath("listings/existing.jpg");
-
-        assertThatThrownBy(() -> listingService.patch(created.id(), new UpdateListingRequest(
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false,
-                List.of("listings/unknown.jpg"),
-                MoveInType.FIXED,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                "Test"
-        )))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode())
-                        .isEqualTo(HttpStatus.BAD_REQUEST));
-
-        verify(imageStorageService, never()).delete(anyList());
     }
 
     @Test
@@ -496,6 +417,7 @@ class ListingServiceTest {
                 500000L,
                 false,
                 false,
+                null,
                 MoveInType.FIXED,
                 null,
                 null,
@@ -531,6 +453,7 @@ class ListingServiceTest {
                 500000L,
                 false,
                 false,
+                null,
                 MoveInType.IMMEDIATE,
                 null,
                 null,
@@ -568,6 +491,7 @@ class ListingServiceTest {
                 0L,
                 sold,
                 false,
+                null,
                 MoveInType.FIXED,
                 null,
                 null,

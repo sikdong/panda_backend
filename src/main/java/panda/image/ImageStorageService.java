@@ -17,7 +17,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Service
 public class ImageStorageService {
@@ -63,7 +65,7 @@ public class ImageStorageService {
     }
 
     public String issuePresignedGetUrl(String imagePathOrKey) {
-        String key = normalizeToKey(imagePathOrKey);
+        String key = normalizeKey(imagePathOrKey);
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
@@ -76,13 +78,35 @@ public class ImageStorageService {
         return presignedRequest.url().toString();
     }
 
+    public String issuePresignedPutUrl(String key, String contentType) {
+        String normalizedKey = normalizeKey(key);
+        PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(normalizedKey);
+        if (contentType != null && !contentType.isBlank()) {
+            putObjectRequestBuilder.contentType(contentType.trim());
+        }
+
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                .putObjectRequest(putObjectRequestBuilder.build())
+                .signatureDuration(Duration.ofSeconds(presignedGetExpirationSeconds))
+                .build();
+        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
+        return presignedRequest.url().toString();
+    }
+
+    public String createKey(String originalFileName) {
+        String extension = extractExtension(originalFileName);
+        return keyPrefix + "/" + UUID.randomUUID() + extension;
+    }
+
     public void delete(List<String> imagePathOrKeys) {
         if (imagePathOrKeys == null || imagePathOrKeys.isEmpty()) {
             return;
         }
 
         for (String imagePathOrKey : imagePathOrKeys) {
-            String key = normalizeToKey(imagePathOrKey);
+            String key = normalizeKey(imagePathOrKey);
             try {
                 DeleteObjectRequest request = DeleteObjectRequest.builder()
                         .bucket(bucket)
@@ -96,9 +120,7 @@ public class ImageStorageService {
     }
 
     private String save(MultipartFile imageFile) {
-        String extension = extractExtension(imageFile.getOriginalFilename());
-        String fileName = UUID.randomUUID() + extension;
-        String key = keyPrefix + "/" + fileName;
+        String key = createKey(imageFile.getOriginalFilename());
 
         try {
             PutObjectRequest request = PutObjectRequest.builder()
@@ -115,7 +137,7 @@ public class ImageStorageService {
         return key;
     }
 
-    private String normalizeToKey(String imagePathOrKey) {
+    public String normalizeKey(String imagePathOrKey) {
         if (imagePathOrKey == null || imagePathOrKey.isBlank()) {
             throw new IllegalArgumentException("Invalid image path");
         }

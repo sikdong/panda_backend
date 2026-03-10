@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
+import panda.image.Image;
 import panda.image.ImageStorageService;
 import panda.listing.dto.*;
 import panda.listing.enums.MoveInType;
@@ -69,8 +70,8 @@ public class ListingService {
                 .moveInType(request.moveInType())
                 .build();
 
-        List<String> imagePaths = imageStorageService.store(imageFiles);
-        imagePaths.forEach(listing::addImagePath);
+        normalizeRequestedImagePaths(request.imagePaths()).forEach(listing::addImagePath);
+        imageStorageService.store(imageFiles).forEach(listing::addImagePath);
 
         Listing saved = listingRepository.save(listing);
         return new CreateListingResponse(saved.getId(), saved.getCreatedAt());
@@ -122,7 +123,7 @@ public class ListingService {
 
     @Transactional
     public void patch(Long id, UpdateListingRequest request) {
-        patch(id, request, null);
+        patch(id, request, Collections.emptyList());
     }
 
     @Transactional
@@ -181,10 +182,8 @@ public class ListingService {
                 request.description() != null ? request.description() : listing.getDescription()
         );
 
-        List<MultipartFile> safeImages = images == null ? List.of() : images;
         syncExistingImages(listing, request.imagePaths());
-        List<String> newImagePaths = imageStorageService.store(safeImages);
-        newImagePaths.forEach(listing::addImagePath);
+        imageStorageService.store(images).forEach(listing::addImagePath);
     }
 
     @Transactional
@@ -211,6 +210,23 @@ public class ListingService {
         if (moveInType == MoveInType.IMMEDIATE && moveInDate != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "moveInDate must be null when moveInType is IMMEDIATE");
         }
+    }
+
+    private List<String> normalizeRequestedImagePaths(List<String> requestedImagePaths) {
+        if (requestedImagePaths == null || requestedImagePaths.isEmpty()) {
+            return List.of();
+        }
+
+        return requestedImagePaths.stream()
+                .filter(path -> path != null && !path.isBlank())
+                .map(path -> {
+                    try {
+                        return imageStorageService.normalizeKey(path);
+                    } catch (IllegalArgumentException ex) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image path included", ex);
+                    }
+                })
+                .toList();
     }
 
     private Listing findByIdOrThrow(Long id) {
@@ -274,31 +290,26 @@ public class ListingService {
             return;
         }
 
-        List<String> normalizedRequestedPaths = requestedImagePaths.stream()
-                .filter(path -> path != null && !path.isBlank())
-                .map(String::trim)
-                .toList();
-
-        Map<String, panda.image.Image> existingByPath = listing.getImages().stream()
-                .collect(Collectors.toMap(panda.image.Image::getImagePath, Function.identity(), (left, right) -> left));
-        Set<String> requestedPathSet = new LinkedHashSet<>(normalizedRequestedPaths);
-
-        if (!existingByPath.keySet().containsAll(requestedPathSet)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown retained image path included");
-        }
+        List<String> normalizedRequestedPaths = normalizeRequestedImagePaths(requestedImagePaths);
+        Map<String, Image> existingByPath = listing.getImages().stream()
+                .collect(Collectors.toMap(Image::getImagePath, Function.identity(), (left, right) -> left));
+        List<String> orderedRequestedPaths = new java.util.ArrayList<>(new LinkedHashSet<>(normalizedRequestedPaths));
 
         List<String> pathsToDelete = existingByPath.keySet().stream()
-                .filter(path -> !requestedPathSet.contains(path))
+                .filter(path -> !orderedRequestedPaths.contains(path))
                 .toList();
         if (!pathsToDelete.isEmpty()) {
             imageStorageService.delete(pathsToDelete);
         }
 
-        listing.getImages().removeIf(image -> !requestedPathSet.contains(image.getImagePath()));
+        listing.getImages().removeIf(image -> !orderedRequestedPaths.contains(image.getImagePath()));
+        orderedRequestedPaths.stream()
+                .filter(path -> !existingByPath.containsKey(path))
+                .forEach(listing::addImagePath);
 
         Map<String, Integer> order = new java.util.HashMap<>();
-        for (int i = 0; i < normalizedRequestedPaths.size(); i++) {
-            order.putIfAbsent(normalizedRequestedPaths.get(i), i);
+        for (int i = 0; i < orderedRequestedPaths.size(); i++) {
+            order.putIfAbsent(orderedRequestedPaths.get(i), i);
         }
         listing.getImages().sort((left, right) -> {
             int leftOrder = order.getOrDefault(left.getImagePath(), Integer.MAX_VALUE);

@@ -18,7 +18,8 @@ public class CorsConfig {
                                 "https://pandarealestate.store",
                                 "https://www.pandarealestate.store")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                        .allowedHeaders("*");
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
             }
         };
     }

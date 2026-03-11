@@ -1,11 +1,14 @@
 package panda.listing;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import panda.analytics.AnalyticsService;
 import panda.listing.dto.*;
 
 @RestController
@@ -15,6 +18,7 @@ public class ListingController {
 
     private final ListingService listingService;
     private final BuildingLedgerService buildingLedgerService;
+    private final AnalyticsService analyticsService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -33,7 +37,9 @@ public class ListingController {
     }
 
     @GetMapping("/unsold")
-    public List<ListingResponse> getUnsoldListings() {
+    public List<ListingResponse> getUnsoldListings(HttpServletRequest request, HttpServletResponse response) {
+        String actorKey = analyticsService.getOrCreateActorKey(request, response);
+        analyticsService.trackVisit(actorKey, request.getRequestURI());
         return listingService.getUnsoldListings();
     }
 

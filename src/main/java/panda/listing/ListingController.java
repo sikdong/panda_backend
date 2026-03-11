@@ -4,10 +4,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import panda.listing.dto.*;
 
 @RestController
@@ -22,15 +20,6 @@ public class ListingController {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateListingResponse create(@Valid @RequestBody CreateListingRequest request) {
         return listingService.create(request);
-    }
-
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public CreateListingResponse createWithImages(
-            @Valid @RequestPart("listing") CreateListingRequest request,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) {
-        return listingService.create(request, images);
     }
 
     @GetMapping("/summaries")
@@ -93,16 +82,6 @@ public class ListingController {
             @Valid @RequestBody UpdateListingRequest request
     ) {
         listingService.patch(id, request);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping(path = "/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> patchWithImages(
-            @PathVariable Long id,
-            @Valid @RequestPart("listing") UpdateListingRequest request,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
-    ) {
-        listingService.patch(id, request, images);
         return ResponseEntity.ok().build();
     }
 

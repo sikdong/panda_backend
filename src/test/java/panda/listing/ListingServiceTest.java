@@ -46,7 +46,6 @@ class ListingServiceTest {
     void setUp() {
         listingRepository.deleteAll();
         reset(imageStorageService);
-        when(imageStorageService.store(anyList())).thenReturn(List.of());
         when(imageStorageService.issuePresignedGetUrl(anyString())).thenReturn("https://example.com/a.jpg");
         when(imageStorageService.normalizeKey(anyString()))
                 .thenAnswer(invocation -> invocation.getArgument(0));

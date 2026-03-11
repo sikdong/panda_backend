@@ -1,15 +1,10 @@
 package panda.image;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -47,23 +42,6 @@ public class ImageStorageService {
         this.presignedGetExpirationSeconds = presignedGetExpirationSeconds;
     }
 
-    public List<String> store(List<MultipartFile> imageFiles) {
-        if (imageFiles == null || imageFiles.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<String> imageKeys = new ArrayList<>();
-        for (MultipartFile imageFile : imageFiles) {
-            if (imageFile == null || imageFile.isEmpty()) {
-                continue;
-            }
-
-            String key = save(imageFile);
-            imageKeys.add(key);
-        }
-        return imageKeys;
-    }
-
     public String issuePresignedGetUrl(String imagePathOrKey) {
         String key = normalizeKey(imagePathOrKey);
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -95,9 +73,10 @@ public class ImageStorageService {
         return presignedRequest.url().toString();
     }
 
-    public String createKey(String originalFileName) {
+    public String createKey(Long listingId, String originalFileName) {
+        validateListingId(listingId);
         String extension = extractExtension(originalFileName);
-        return keyPrefix + "/" + UUID.randomUUID() + extension;
+        return keyPrefix + "/" + listingId + "/" + UUID.randomUUID() + extension;
     }
 
     public void delete(List<String> imagePathOrKeys) {
@@ -117,24 +96,6 @@ public class ImageStorageService {
                 throw new IllegalStateException("Failed to delete image file from S3", ex);
             }
         }
-    }
-
-    private String save(MultipartFile imageFile) {
-        String key = createKey(imageFile.getOriginalFilename());
-
-        try {
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .contentType(imageFile.getContentType())
-                    .build();
-            s3Client.putObject(request, RequestBody.fromBytes(imageFile.getBytes()));
-        } catch (IOException ex) {
-            throw new IllegalStateException("Failed to read image file", ex);
-        } catch (S3Exception ex) {
-            throw new IllegalStateException("Failed to upload image file to S3", ex);
-        }
-        return key;
     }
 
     public String normalizeKey(String imagePathOrKey) {
@@ -183,5 +144,11 @@ public class ImageStorageService {
         }
         String extension = fileName.substring(dotIndex);
         return extension.matches("\\.[A-Za-z0-9]{1,10}") ? extension : "";
+    }
+
+    private void validateListingId(Long listingId) {
+        if (listingId == null || listingId <= 0) {
+            throw new IllegalArgumentException("Invalid listing id");
+        }
     }
 }

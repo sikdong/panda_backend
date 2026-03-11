@@ -7,16 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
@@ -26,35 +21,6 @@ class ImageStorageServiceTest {
     private static final String BUCKET = "test-bucket";
     private static final String PREFIX = "listings";
     private static final long EXPIRATION_SECONDS = 900;
-
-    @Test
-    @DisplayName("이미지 저장 시 S3에 업로드되고 저장된 키 목록이 반환된다")
-    void storeSavesFileAndReturnsObjectKey() {
-        S3Client s3Client = mockS3Client();
-        S3Presigner s3Presigner = mockPresigner();
-        ImageStorageService service = newService(s3Client, s3Presigner);
-        MockMultipartFile file = imageFile("room.jpg", "sample".getBytes());
-
-        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-                .thenReturn(PutObjectResponse.builder().eTag("etag").build());
-
-        List<String> stored = service.store(List.of(file));
-
-        assertThat(stored).hasSize(1);
-        assertThat(stored.getFirst()).startsWith(PREFIX + "/");
-        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
-    }
-
-    @Test
-    @DisplayName("이미지 저장 시 null 또는 빈 파일은 저장 대상에서 제외된다")
-    void storeSkipsNullAndEmptyFiles() {
-        ImageStorageService service = newService(mockS3Client(), mockPresigner());
-        MockMultipartFile empty = imageFile("empty.jpg", new byte[0]);
-
-        List<String> stored = service.store(Arrays.asList(null, empty));
-
-        assertThat(stored).isEmpty();
-    }
 
     @Test
     @DisplayName("Presigned URL 발급 시 S3 서명 URL 문자열이 반환된다")
@@ -102,10 +68,6 @@ class ImageStorageServiceTest {
 
     private S3Presigner mockPresigner() {
         return org.mockito.Mockito.mock(S3Presigner.class);
-    }
-
-    private MockMultipartFile imageFile(String name, byte[] bytes) {
-        return new MockMultipartFile("image", name, "image/jpeg", bytes);
     }
 
     private URL toUrl(String value) {

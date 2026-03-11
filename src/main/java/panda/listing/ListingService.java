@@ -2,7 +2,6 @@ package panda.listing;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.multipart.MultipartFile;
 import panda.image.Image;
 import panda.image.ImageStorageService;
 import panda.listing.dto.*;
@@ -33,11 +31,6 @@ public class ListingService {
 
     @Transactional
     public CreateListingResponse create(CreateListingRequest request) {
-        return create(request, Collections.emptyList());
-    }
-
-    @Transactional
-    public CreateListingResponse create(CreateListingRequest request, List<MultipartFile> imageFiles) {
         Coordinate coordinate = geocodingService.convertAddressToCoordinate(request.address());
         LocalDate moveInDate = request.moveInDate();
         validateMoveInCombination(request.moveInType(), moveInDate);
@@ -70,10 +63,8 @@ public class ListingService {
                 .moveInType(request.moveInType())
                 .build();
 
-        normalizeRequestedImagePaths(request.imagePaths()).forEach(listing::addImagePath);
-        imageStorageService.store(imageFiles).forEach(listing::addImagePath);
-
         Listing saved = listingRepository.save(listing);
+        normalizeRequestedImagePaths(request.imagePaths()).forEach(saved::addImagePath);
         return new CreateListingResponse(saved.getId(), saved.getCreatedAt());
     }
 
@@ -123,11 +114,6 @@ public class ListingService {
 
     @Transactional
     public void patch(Long id, UpdateListingRequest request) {
-        patch(id, request, Collections.emptyList());
-    }
-
-    @Transactional
-    public void patch(Long id, UpdateListingRequest request, List<MultipartFile> images) {
         Listing listing = findByIdOrThrow(id);
 
         String address = listing.getAddress();
@@ -183,7 +169,6 @@ public class ListingService {
         );
 
         syncExistingImages(listing, request.imagePaths());
-        imageStorageService.store(images).forEach(listing::addImagePath);
     }
 
     @Transactional

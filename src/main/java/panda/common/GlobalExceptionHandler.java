@@ -3,6 +3,7 @@ package panda.common;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,12 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final SlackNotifier slackNotifier;
+
+    public GlobalExceptionHandler(SlackNotifier slackNotifier) {
+        this.slackNotifier = slackNotifier;
+    }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Void> handleNoResource(NoResourceFoundException e) {
@@ -37,8 +44,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleServer(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleServer(Exception ex, HttpServletRequest request) {
         log.error("Unhandled server exception", ex);
+        slackNotifier.notifyUnhandledException(ex, request);
 
         Map<String, Object> response = new HashMap<>();
         response.put("errorType", "SERVER_ERROR");

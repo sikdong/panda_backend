@@ -14,6 +14,7 @@ public record ListingResponse(
         List<LoanProduct> loanProducts,
         Boolean sold,
         Boolean hotProperty,
+        Boolean recentlyRegistered,
         RoomType roomType,
         Double latitude,
         Double longitude

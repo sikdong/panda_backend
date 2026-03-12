@@ -244,6 +244,7 @@ public class ListingService {
                 listing.getIllegalBuildingStatus(),
                 listing.getViewCount(),
                 listing.isHotProperty(),
+                listing.isRecentlyRegistered(),
                 listing.getImages().stream()
                         .map(image -> imageStorageService.issuePresignedGetUrl(image.getImagePath()))
                         .toList(),
@@ -264,6 +265,7 @@ public class ListingService {
                 listing.getLoanProducts(),
                 listing.isSold(),
                 listing.isHotProperty(),
+                listing.isRecentlyRegistered(),
                 listing.getRoomType(),
                 listing.getLatitude(),
                 listing.getLongitude()

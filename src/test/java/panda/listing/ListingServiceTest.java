@@ -103,6 +103,7 @@ class ListingServiceTest {
         assertThat(saved.getIllegalBuildingStatus()).isEqualTo(IllegalBuildingStatus.NO);
         assertThat(saved.getDescription()).isEqualTo("room condition is excellent");
         assertThat(saved.isSold()).isFalse();
+        assertThat(saved.isRecentlyRegistered()).isTrue();
         assertThat(saved.getLoanProducts()).containsExactly(LoanProduct.KAKAO_BANK, LoanProduct.HF_YOUTH);
     }
 
@@ -146,6 +147,7 @@ class ListingServiceTest {
         assertThat(detail.maintenanceFee()).isEqualTo(60000L);
         assertThat(detail.loanStatus()).isEqualTo(LoanStatus.NONE);
         assertThat(detail.illegalBuildingStatus()).isEqualTo(IllegalBuildingStatus.NO);
+        assertThat(detail.recentlyRegistered()).isTrue();
         assertThat(detail.description()).isEqualTo("quiet neighborhood");
     }
 
@@ -162,8 +164,10 @@ class ListingServiceTest {
         assertThat(summaries).hasSize(2);
         assertThat(summaries.get(0).address()).isEqualTo("Seoul Mapo Worldcupbuk-ro 10");
         assertThat(summaries.get(0).sold()).isFalse();
+        assertThat(summaries.get(0).recentlyRegistered()).isTrue();
         assertThat(summaries.get(1).address()).isEqualTo("Seoul Seongdong Wangsimni-ro 20");
         assertThat(summaries.get(1).sold()).isTrue();
+        assertThat(summaries.get(1).recentlyRegistered()).isTrue();
     }
 
     @Test
@@ -194,6 +198,7 @@ class ListingServiceTest {
         assertThat(unsold).hasSize(1);
         assertThat(unsold.getFirst().id()).isEqualTo(second.id());
         assertThat(unsold.getFirst().sold()).isFalse();
+        assertThat(unsold.getFirst().recentlyRegistered()).isTrue();
     }
 
     @Test

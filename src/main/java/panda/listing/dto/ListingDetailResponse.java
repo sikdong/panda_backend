@@ -30,6 +30,7 @@ public record ListingDetailResponse(
         IllegalBuildingStatus illegalBuildingStatus,
         Long viewCount,
         Boolean hotProperty,
+        Boolean recentlyRegistered,
         List<String> imagePaths,
         List<String> imageFilePaths,
         String description

@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -102,8 +103,8 @@ public class ListingService {
     @Transactional
     public ListingDetailResponse getByIdForView(Long id) {
         Listing listing = findByIdOrThrow(id);
-        listing.increaseViewCount();
-        return toDetailResponse(listing);
+        listingRepository.incrementViewCount(id);
+        return toDetailResponse(listing, (listing.getViewCount() == null ? 0L : listing.getViewCount()) + 1L);
     }
 
     @Transactional(readOnly = true)
@@ -188,6 +189,27 @@ public class ListingService {
         listing.updateSold(request.sold());
     }
 
+    @Transactional(readOnly = true)
+    public void ensureExists(Long id) {
+        findByIdOrThrow(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ListingResponse> getVisibleSummariesByIdsInOrder(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Listing> listingById = listingRepository.findByIdInAndSoldFalse(ids).stream()
+                .collect(Collectors.toMap(Listing::getId, Function.identity(), (left, right) -> left));
+
+        return ids.stream()
+                .map(listingById::get)
+                .filter(Objects::nonNull)
+                .map(this::toSummaryResponse)
+                .toList();
+    }
+
     private void validateMoveInCombination(MoveInType moveInType, LocalDate moveInDate) {
         if (moveInType == MoveInType.FIXED && moveInDate == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "moveInDate is required when moveInType is FIXED");
@@ -220,6 +242,10 @@ public class ListingService {
     }
 
     private ListingDetailResponse toDetailResponse(Listing listing) {
+        return toDetailResponse(listing, listing.getViewCount());
+    }
+
+    private ListingDetailResponse toDetailResponse(Listing listing, Long viewCount) {
         return new ListingDetailResponse(
                 listing.getAddress(),
                 listing.getNote(),
@@ -242,7 +268,7 @@ public class ListingService {
                 listing.getMaintenanceFee(),
                 listing.getLoanStatus(),
                 listing.getIllegalBuildingStatus(),
-                listing.getViewCount(),
+                viewCount,
                 listing.isHotProperty(),
                 listing.isRecentlyRegistered(),
                 listing.getImages().stream()

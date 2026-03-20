@@ -12,6 +12,16 @@ public interface ListingRepository extends JpaRepository<Listing, Long> {
     List<Listing> findAllByOrderByUpdatedAtDesc();
     List<Listing> findBySoldFalseOrderByUpdatedAtDesc();
     List<Listing> findByAddressContainingIgnoreCaseOrderByUpdatedAtDesc(String address);
+    List<Listing> findByIdInAndSoldFalse(List<Long> ids);
+
+    @Modifying
+    @Transactional
+    @Query("""
+            UPDATE Listing l
+            SET l.viewCount = COALESCE(l.viewCount, 0) + 1
+            WHERE l.id = :id
+            """)
+    int incrementViewCount(@Param("id") Long id);
 
     @Modifying
     @Transactional

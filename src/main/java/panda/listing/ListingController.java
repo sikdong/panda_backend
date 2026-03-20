@@ -17,6 +17,7 @@ import panda.listing.dto.*;
 public class ListingController {
 
     private final ListingService listingService;
+    private final ListingRecentViewedService listingRecentViewedService;
     private final BuildingLedgerService buildingLedgerService;
     private final AnalyticsService analyticsService;
 
@@ -75,6 +76,20 @@ public class ListingController {
     @GetMapping("/{id:\\d+}")
     public ListingDetailResponse getById(@PathVariable Long id) {
         return listingService.getByIdForView(id);
+    }
+
+    @PostMapping("/{id:\\d+}/view")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void recordRecentViewed(@PathVariable Long id, HttpServletRequest request) {
+        listingRecentViewedService.recordView(id, request);
+    }
+
+    @GetMapping("/recent-viewed")
+    public List<ListingResponse> getRecentViewed(
+            HttpServletRequest request,
+            @RequestParam(required = false) Integer limit
+    ) {
+        return listingRecentViewedService.getRecentViewed(request, limit);
     }
 
     @GetMapping("/{id:\\d+}/edit")

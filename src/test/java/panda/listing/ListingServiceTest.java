@@ -52,7 +52,7 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("매물 생성 시 Builder 기반으로 저장되고 ID와 생성 시각이 반환된다")
+    @DisplayName("매물 생성")
     void createSavesListingWithBuilderAndReturnsId() {
         CreateListingRequest request = new CreateListingRequest(
                 "  Seoul Gangnam Teheran-ro 1  ",
@@ -108,7 +108,7 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("상세 조회는 생성된 확장 필드를 그대로 반환한다")
+    @DisplayName("매물 수정 시 상세 조회")
     void getByIdForEditReturnsExtendedFields() {
         CreateListingResponse created = listingService.create(new CreateListingRequest(
                 "Seoul Seocho Banpo-daero 1",
@@ -152,7 +152,7 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("매물 요약 목록 조회 시 저장된 모든 매물이 반환된다")
+    @DisplayName("매물 요약 목록 조회")
     void getSummariesReturnsAllSavedListings() {
         createListing("Seoul Mapo Worldcupbuk-ro 10", false);
         createListing("Seoul Seongdong Wangsimni-ro 20", true);
@@ -202,7 +202,7 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("주소 검색은 부분 일치 항목만 updatedAt 최신순으로 반환한다")
+    @DisplayName("관리자 매물 페이지 - 주소 검색 시 매물은 updatedAt 최신순으로 반환한다")
     void searchByAddressReturnsMatchedListingsInUpdatedAtDescOrder() {
         CreateListingResponse first = createListing("Seoul Songpa Olympic-ro 1", false);
         CreateListingResponse second = createListing("Busan Songpa Branch 2", false);
@@ -218,7 +218,7 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("주소 검색에서 공백 키워드를 입력하면 400 예외가 발생한다")
+    @DisplayName("관리자 매물 페이지 - 주소 검색에서 공백 키워드를 입력하면 400 예외가 발생한다")
     void searchByAddressRejectsBlankKeyword() {
         assertThatThrownBy(() -> listingService.searchByAddress("   "))
                 .isInstanceOf(ResponseStatusException.class)
@@ -382,7 +382,7 @@ class ListingServiceTest {
     }
 
     @Test
-    @DisplayName("매물 삭제 후에는 해당 매물을 조회할 수 없다")
+    @DisplayName("매물 삭제")
     void deleteRemovesListing() {
         CreateListingResponse created = createListing("Seoul Yongsan Hangang-daero 10", false);
 

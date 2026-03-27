@@ -2,14 +2,11 @@ package panda.listing;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import panda.image.ImageRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +26,7 @@ public class ListingService {
     private final ListingRepository listingRepository;
     private final GeocodingService geocodingService;
     private final ImageStorageService imageStorageService;
+    private final ImageRepository imageRepository;
 
     @Transactional
     public CreateListingResponse create(CreateListingRequest request) {
@@ -174,13 +172,11 @@ public class ListingService {
 
     @Transactional
     public void delete(Long id) {
-        Listing listing = findByIdOrThrow(id);
-        imageStorageService.delete(
-                listing.getImages().stream()
-                        .map(image -> image.getImagePath())
-                        .toList()
-        );
-        listingRepository.delete(listing);
+        existByIdOrThrow(id);
+        List<String> imagePaths = imageRepository.findImagePathsByListingId(id);
+        imageStorageService.delete(imagePaths);
+        imageRepository.deleteByListingId(id);
+        listingRepository.deleteById(id);
     }
 
     @Transactional
@@ -191,7 +187,7 @@ public class ListingService {
 
     @Transactional(readOnly = true)
     public void ensureExists(Long id) {
-        findByIdOrThrow(id);
+        existByIdOrThrow(id);
     }
 
     @Transactional(readOnly = true)
@@ -239,6 +235,12 @@ public class ListingService {
     private Listing findByIdOrThrow(Long id) {
         return listingRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found: " + id));
+    }
+
+    private void existByIdOrThrow(Long id){
+        if(!listingRepository.existsById(id)){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found: " + id);
+        }
     }
 
     private ListingDetailResponse toDetailResponse(Listing listing) {
@@ -320,7 +322,7 @@ public class ListingService {
                 .filter(path -> !existingByPath.containsKey(path))
                 .forEach(listing::addImagePath);
 
-        Map<String, Integer> order = new java.util.HashMap<>();
+        Map<String, Integer> order = new HashMap<>();
         for (int i = 0; i < orderedRequestedPaths.size(); i++) {
             order.putIfAbsent(orderedRequestedPaths.get(i), i);
         }

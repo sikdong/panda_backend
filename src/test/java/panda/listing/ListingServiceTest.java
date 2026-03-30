@@ -476,6 +476,20 @@ class ListingServiceTest {
                         .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
+    @Test
+    @DisplayName("삭제할 매물이 존재하지 않으면 에러가 발생한다")
+    void deleteThrowsNotFoundWhenListingMissing() {
+        Long listingId = 999L;
+
+        assertThatThrownBy(() -> listingService.delete(listingId))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex ->
+                        org.assertj.core.api.Assertions.assertThat(
+                                ((ResponseStatusException) ex).getStatusCode()
+                        ).isEqualTo(HttpStatus.NOT_FOUND)
+                );
+    }
+
     private CreateListingResponse createListing(String address, boolean sold) {
         return listingService.create(defaultRequest(address, sold));
     }

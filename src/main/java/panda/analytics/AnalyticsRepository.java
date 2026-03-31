@@ -38,6 +38,14 @@ public interface AnalyticsRepository extends JpaRepository<DailyVisitEvent, Long
             @Param("now") LocalDateTime now
     );
 
+    @Modifying
+    @Transactional
+    @Query(value = """
+            DELETE FROM daily_visit_events
+            WHERE occurred_at < :cutoff
+            """, nativeQuery = true)
+    int deleteVisitsOlderThan(@Param("cutoff") LocalDateTime cutoff);
+
     interface DailyMetricRow {
 
         String getDate();

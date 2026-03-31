@@ -7,8 +7,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -74,12 +72,12 @@ public class AnalyticsService {
             return;
         }
 
-        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
-        LocalDate eventDateKst = ZonedDateTime.now(KST).toLocalDate();
+        LocalDateTime nowKst = LocalDateTime.now(KST);
+        LocalDate eventDateKst = nowKst.toLocalDate();
 
         try {
-            analyticsRepository.insertDailyActorIgnore(eventDateKst, actorKey, nowUtc);
-            analyticsRepository.insertVisit(eventDateKst, actorKey, path, nowUtc);
+            analyticsRepository.insertDailyActorIgnore(eventDateKst, actorKey, nowKst);
+            analyticsRepository.insertVisit(eventDateKst, actorKey, path, nowKst);
         } catch (Exception e) {
             log.warn("Failed to track visit metric. actorKey={}, path={}", actorKey, path, e);
         }
@@ -90,5 +88,11 @@ public class AnalyticsService {
         return analyticsRepository.findDailyMetrics(startDate, endDate).stream()
                 .map(row -> new AdminDauDailyMetricDto(row.getDate(), row.getDau(), row.getVisits()))
                 .toList();
+    }
+
+    @Transactional
+    public int purgeOldVisitEvents(int retentionDays) {
+        LocalDateTime cutoffKst = LocalDateTime.now(KST).minusDays(retentionDays);
+        return analyticsRepository.deleteVisitsOlderThan(cutoffKst);
     }
 }

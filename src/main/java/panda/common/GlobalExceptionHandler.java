@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -83,12 +84,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleServer(Exception ex, HttpServletRequest request) {
         log.error("Unhandled server exception", ex);
-        slackNotifier.notifyUnhandledException(ex, request);
+        if (!isClientRequestError(ex)) {
+            slackNotifier.notifyUnhandledException(ex, request);
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("errorType", "SERVER_ERROR");
         response.put("message", "서버 처리 중 오류가 발생했습니다.");
         response.put("timestamp", LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    private boolean isClientRequestError(Exception ex) {
+        if (ex instanceof ErrorResponse errorResponse) {
+            return errorResponse.getStatusCode().is4xxClientError();
+        }
+        return false;
     }
 }

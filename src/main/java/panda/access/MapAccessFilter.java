@@ -24,13 +24,7 @@ public class MapAccessFilter extends OncePerRequestFilter {
             return true;
         }
 
-        String uri = request.getRequestURI();
-        return !(
-                "/api/v1/listings/unsold".equals(uri)
-                        || "/api/v1/listings/recent-viewed".equals(uri)
-                        || uri.matches("^/api/v1/listings/\\d+$")
-                        || uri.matches("^/api/v1/listings/\\d+/(view|viewer-presence|viewer-count)$")
-        );
+        return !request.getRequestURI().startsWith("/api/v1/map/listings");
     }
 
     @Override
